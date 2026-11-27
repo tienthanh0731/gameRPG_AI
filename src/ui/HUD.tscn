@@ -1,13 +1,21 @@
-[gd_scene load_steps=7 format=3 uid="uid://chud01scene"]
+[gd_scene format=3 uid="uid://chud01scene"]
 
 [ext_resource type="Script" path="res://src/ui/HUD.gd" id="1_hud_script"]
+[ext_resource type="PackedScene" uid="uid://day_summary_ui_01" path="res://src/ui/DaySummaryUI.tscn" id="2_summary_scene"]
+[ext_resource type="PackedScene" uid="uid://permadeath_ui_01" path="res://src/ui/PermadeathUI.tscn" id="3_permadeath_scene"]
+[ext_resource type="PackedScene" uid="uid://leaderboard_ui_01" path="res://src/ui/LeaderboardUI.tscn" id="4_leaderboard_scene"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.08, 0.08, 0.1, 0.8)
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.4, 0.5, 0.6)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.2, 0.06, 0.06, 0.85)
@@ -93,10 +101,10 @@ text = "Thân nhiệt: 37.0°C"
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -200.0
+offset_left = -260.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 124.0
+offset_bottom = 210.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -111,11 +119,19 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ResTitle" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
-modulate = Color(0.9, 0.8, 0.3, 1)
+[node name="TalentLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "TÀI NGUYÊN (KHO)"
+text = "✦ [F] Cần Cù Bù Thông Minh"
+
+[node name="SPLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(1, 0.9, 0.4, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "⭐ SP Hôm Nay: +0 (Mùa: 0)"
+
+[node name="HSeparator" type="HSeparator" parent="RightPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
 
 [node name="WoodLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
 modulate = Color(0.85, 0.7, 0.5, 1)
@@ -135,14 +151,21 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "⛏️ Sắt: 0"
 
+[node name="BtnLeaderboard" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "🏆 BẢNG XẾP HẠNG"
+
 [node name="TopPanel" type="PanelContainer" parent="."]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -180.0
+offset_left = -220.0
 offset_top = 12.0
-offset_right = 180.0
-offset_bottom = 95.0
+offset_right = 220.0
+offset_bottom = 115.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -157,10 +180,17 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_constants/separation = 2
 
+[node name="DayLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
+modulate = Color(1, 0.85, 0.3, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "NGÀY SINH TỒN: 1 (Tân Thủ)"
+horizontal_alignment = 1
+
 [node name="BiomeLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
 modulate = Color(0.5, 0.9, 1, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Địa hình: Khu Rừng Nguyên Sinh"
 horizontal_alignment = 1
 
@@ -171,7 +201,7 @@ text = "Thời gian: 08:00"
 horizontal_alignment = 1
 
 [node name="PhaseLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
-modulate = Color(1, 0.85, 0.3, 1)
+modulate = Color(0.8, 0.9, 1, 0.9)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "[BAN NGÀY] Khám phá & Thu thập"
@@ -197,3 +227,12 @@ theme_override_font_sizes/font_size = 13
 text = "[Phím 1] RÌU ĐỐN CỦI  |  [Phím 2] CUỐC ĐÀO MỎ  |  [Phím 3] KIẾM  |  [Phím B] XÂY DỰNG"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="DaySummaryUI" parent="." instance=ExtResource("2_summary_scene")]
+visible = false
+
+[node name="PermadeathUI" parent="." instance=ExtResource("3_permadeath_scene")]
+visible = false
+
+[node name="LeaderboardUI" parent="." instance=ExtResource("4_leaderboard_scene")]
+visible = false

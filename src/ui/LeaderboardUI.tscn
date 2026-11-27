@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://leaderboard_ui_01"]
+
+[ext_resource type="Script" path="res://src/ui/LeaderboardUI.gd" id="1_lead_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lead"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.5, 0.7, 0.9)
+
+[node name="LeaderboardUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lead_script")
+
+[node name="BackgroundDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.04, 0.8)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -260.0
+offset_right = 380.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lead")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="LabelTitle" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "✦ BẢNG XẾP HẠNG HOANG CỔ KÝ ✦"
+horizontal_alignment = 1
+
+[node name="TabBar" type="TabBar" parent="Panel/VBox"]
+layout_mode = 2
+tab_count = 5
+tab_0/title = "1. Sinh Tồn"
+tab_1/title = "2. Chiến Đấu"
+tab_2/title = "3. Lãnh Thổ"
+tab_3/title = "4. Liên Minh"
+tab_4/title = "5. Thiên Phú Hiếm"
+
+[node name="ItemList" type="ItemList" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+
+[node name="LabelMyRank" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Vị trí của bạn: Hạng #4 (Thành tích: 1 Ngày)"
+horizontal_alignment = 1
+
+[node name="BtnClose" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "ĐÓNG BẢNG XẾP HẠNG"

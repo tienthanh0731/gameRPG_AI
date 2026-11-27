@@ -23,28 +23,54 @@ func setup(p_player: CharacterBody2D, p_campfire: Area2D, p_day_night: CanvasMod
 		day_night.phase_changed.connect(_on_phase_changed)
 
 func _on_phase_changed(phase: String) -> void:
-	if phase == "Night":
+	if phase == "Dusk":
+		_announce_dusk_warning()
+	elif phase == "Night":
 		_start_night_raid()
 	elif phase == "Dawn":
 		_finish_night_raid()
 
+func _announce_dusk_warning() -> void:
+	var wave_size = 8
+	if GameState:
+		wave_size = GameState.get_raid_wave_size()
+	EventBus.dusk_warning.emit(wave_size, "Heo Rừng Cuồng Nộ")
+	_show_banner(
+		"⚠ HOÀNG HÔN: CẢNH BÁO THÚ TRIỀU SẮP TỚI! ⚠",
+		"Ước tính %d dã thú sẽ tràn về căn cứ khi màn đêm buông xuống. Hãy gia cố tường thành!" % wave_size,
+		Color(1.0, 0.6, 0.2)
+	)
+
 func _start_night_raid() -> void:
 	current_wave += 1
+	var wave_size = 8
+	if GameState:
+		wave_size = GameState.get_raid_wave_size()
+		
 	raid_started.emit(current_wave)
+	EventBus.night_started.emit(wave_size)
 	
-	_show_banner("THÚ TRIỀU BAN ĐÊM XUẤT HIỆN!", "Bầy thú hoang đang tràn về căn cứ!", Color(1.0, 0.25, 0.25))
+	_show_banner(
+		"☠ THÚ TRIỀU BAN ĐÊM ĐÃ TỚI! ☠",
+		"Bầy %d dã thú hoang dã đang điên cuồng tấn công căn cứ!" % wave_size,
+		Color(1.0, 0.25, 0.25)
+	)
 	
 	var center = campfire.global_position if campfire else (player.global_position if player else Vector2.ZERO)
-	var spawn_count = 3 + current_wave
 	
-	for i in range(spawn_count):
-		var angle = (float(i) / float(spawn_count)) * TAU + randf_range(-0.3, 0.3)
-		var spawn_pos = center + Vector2(cos(angle), sin(angle)) * randf_range(380.0, 480.0)
+	for i in range(wave_size):
+		var angle = (float(i) / float(wave_size)) * TAU + randf_range(-0.25, 0.25)
+		var spawn_pos = center + Vector2(cos(angle), sin(angle)) * randf_range(380.0, 520.0)
 		_spawn_boar(spawn_pos)
 
 func _spawn_boar(pos: Vector2) -> void:
 	var boar = BoarScene.instantiate()
 	boar.global_position = pos
+	
+	# Chance of spawning elite monster based on day milestone
+	if GameState and GameState.current_day >= 16 and randf() < 0.2:
+		boar.is_elite = true
+		
 	add_child(boar)
 	active_beasts.append(boar)
 	
@@ -63,14 +89,17 @@ func _on_beast_killed(drop_pos: Vector2) -> void:
 func _finish_night_raid() -> void:
 	if current_wave > 0:
 		raid_cleared.emit(current_wave)
-		_show_banner("BẠN ĐÃ SỐNG SÓT QUA ĐÊM NGUYÊN SINH!", "Thú triều rút lui. Nhận thưởng: +10 Gỗ, +5 Đá", Color(0.4, 1.0, 0.5))
+		EventBus.raid_wave_cleared.emit(current_wave)
 		
-		# Survival bonus
-		if player:
-			var inv = player.get_node_or_null("Inventory")
-			if inv and inv.has_method("add_resource"):
-				inv.add_resource("Gỗ", 10)
-				inv.add_resource("Đá", 5)
+		# End-of-Day Evaluation at Dawn (06:00)
+		if GameState:
+			GameState.evaluate_day_end()
+			
+		# Kill remaining roaming beasts if day has come
+		for b in active_beasts:
+			if is_instance_valid(b) and b.has_method("take_hit"):
+				b.queue_free()
+		active_beasts.clear()
 
 func _show_banner(title: String, subtitle: String, col: Color) -> void:
 	var canvas = CanvasLayer.new()
@@ -96,7 +125,7 @@ func _show_banner(title: String, subtitle: String, col: Color) -> void:
 	get_parent().add_child(canvas)
 	
 	var tween = canvas.create_tween()
-	tween.tween_property(container, "modulate:a", 1.0, 0.5).from(0.0)
-	tween.tween_interval(2.5)
-	tween.tween_property(container, "modulate:a", 0.0, 0.8)
-	tween.tween_callback(canvas.queue_free)
+	tween.tween_property(container, "modulate:a", 1.0, 0.4).from(0.0)
+	tween.tween_interval(2.6)
+	tween.tween_property(container, "modulate:a", 0.0, 0.6)
+	tween.chain().tween_callback(canvas.queue_free)

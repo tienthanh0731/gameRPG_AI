@@ -12,9 +12,15 @@ config_version=5
 
 config/name="LamTinh_HoangCoKy"
 config/description="Game 2D Sinh Ton Xuyen Khong va Thu Thanh Da Nguoi Choi"
-run/main_scene="res://src/world/Main.tscn"
+run/main_scene="res://src/ui/CharacterCreationUI.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://assets/ui_icons/rpg_icons_32x32/sword_01a.png"
+
+[autoload]
+
+EventBus="*res://src/core/EventBus.gd"
+SaveSystem="*res://src/core/SaveSystem.gd"
+GameState="*res://src/core/GameState.gd"
 
 [display]
 

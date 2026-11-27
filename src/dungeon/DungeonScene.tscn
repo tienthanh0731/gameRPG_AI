@@ -1,0 +1,177 @@
+[gd_scene format=3 uid="uid://dungeon_scene_01"]
+
+[ext_resource type="Script" path="res://src/dungeon/DungeonScene.gd" id="1_dungeon_script"]
+[ext_resource type="PackedScene" uid="uid://cplayer01scene" path="res://src/core/Player.tscn" id="2_player_scene"]
+[ext_resource type="Texture2D" path="res://assets/map/tiles/tile_stone.png" id="3_stone_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(1000, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(40, 800)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_exit"]
+radius = 45.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss"]
+bg_color = Color(0.12, 0.05, 0.05, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.2, 0.2, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_hp"]
+bg_color = Color(0.85, 0.15, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory"]
+bg_color = Color(0.08, 0.12, 0.1, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.9, 0.4, 0.9)
+
+[node name="DungeonScene" type="Node2D"]
+script = ExtResource("1_dungeon_script")
+
+[node name="CavernFloor" type="Sprite2D" parent="."]
+z_index = -20
+texture_repeat = 2
+texture = ExtResource("3_stone_tex")
+region_enabled = true
+region_rect = Rect2(-1000, -800, 2000, 1600)
+
+[node name="Boundaries" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 3
+
+[node name="WallTop" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(0, -420)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="WallBottom" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(0, 420)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="WallLeft" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(-520, 0)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="WallRight" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(520, 0)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="ExitPortal" type="Area2D" parent="."]
+position = Vector2(0, 260)
+collision_layer = 16
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitPortal"]
+shape = SubResource("CircleShape2D_exit")
+
+[node name="ExitLabel" type="Label" parent="ExitPortal"]
+z_index = 10
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -60.0
+offset_right = 160.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "[E] TRỞ VỀ CĂN CỨ"
+horizontal_alignment = 1
+
+[node name="Player" parent="." instance=ExtResource("2_player_scene")]
+position = Vector2(0, 120)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="BossHUD" type="PanelContainer" parent="CanvasLayer"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 20.0
+offset_right = 280.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_boss")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/BossHUD"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LabelBossName" type="Label" parent="CanvasLayer/BossHUD/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "✦ [QUÁI TINH ANH] CỔ THÚ THỐNG LĨNH ✦"
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="CanvasLayer/BossHUD/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_boss_hp")
+max_value = 120.0
+value = 120.0
+show_percentage = false
+
+[node name="VictoryBanner" type="PanelContainer" parent="CanvasLayer"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -100.0
+offset_right = 300.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/VictoryBanner"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="LabelTitle" type="Label" parent="CanvasLayer/VictoryBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "✦ CHINH PHỤC PHÓ BẢN THÀNH CÔNG! ✦"
+horizontal_alignment = 1
+
+[node name="LabelRewards" type="Label" parent="CanvasLayer/VictoryBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 13
+text = "+30 SP | 1x Đan Reroll Thiên Phú | 15x Quặng Sắt | 10x Thịt Rừng"
+horizontal_alignment = 1
+
+[node name="LabelHint" type="Label" parent="CanvasLayer/VictoryBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 1, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "Hãy nhặt chiến lợi phẩm và bước vào Cổng Truyền Tống để trở về!"
+horizontal_alignment = 1

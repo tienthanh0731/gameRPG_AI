@@ -1,6 +1,7 @@
 extends Node2D
 
 const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
+const DungeonEntranceScene = preload("res://src/dungeon/DungeonEntrance.tscn")
 
 @onready var map_gen: Node2D = $MapGenerator
 @onready var player: CharacterBody2D = $Player
@@ -11,6 +12,7 @@ const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
 @onready var raid_mgr: Node2D = $RaidManager
 
 var current_biome_temp: float = 28.0
+var dungeon_entrance_node: Node2D = null
 
 var tex_wood_icon: Texture2D
 var tex_stone_icon: Texture2D
@@ -25,6 +27,14 @@ func _ready() -> void:
 	tex_meat_icon = load("res://assets/map/Resources/Meat/Meat Resource/Meat Resource.png")
 	tex_bone_icon = load("res://assets/ui_icons/rpg_icons_32x32/bone01a.png")
 
+	# Ensure GameState has talent & character data loaded
+	if GameState.active_talent.is_empty():
+		if SaveSystem.has_active_character():
+			GameState.init_new_game(SaveSystem.character_data.get("talent", {}), SaveSystem.character_data.get("day", 1))
+		else:
+			var default_talent = TalentData.roll_talent()
+			GameState.init_new_game(default_talent, 1)
+
 	if map_gen:
 		map_gen.player_spawn_found.connect(_on_player_spawn_found)
 		map_gen.biome_changed.connect(_on_biome_changed)
@@ -37,20 +47,37 @@ func _ready() -> void:
 			
 		var stats = player.get_node_or_null("SurvivalStats")
 		if stats:
+			# Apply Talent Multipliers
+			if not GameState.active_talent.is_empty():
+				stats.max_health *= GameState.active_talent.get("hp_mult", 1.0)
+				stats.current_health = stats.max_health
+				if player.get("speed"):
+					player.speed *= GameState.active_talent.get("speed_mult", 1.0)
+			
 			stats.health_changed.connect(_on_health_changed)
 			stats.stamina_changed.connect(_on_stamina_changed)
 			stats.temperature_changed.connect(_on_temperature_changed)
 			if stats.has_signal("player_died"):
 				stats.player_died.connect(_on_player_died)
+				
 			# Immediately push initial values to HUD
 			_on_health_changed(stats.current_health, stats.max_health)
 			_on_stamina_changed(stats.current_stamina, stats.max_stamina)
 			_on_temperature_changed(stats.body_temperature)
 
 		var inv = player.get_node_or_null("Inventory")
-		if inv and hud and hud.has_method("update_resources"):
-			inv.resources_updated.connect(hud.update_resources)
-			hud.update_resources(inv.wood, inv.stone, inv.iron)
+		if inv:
+			if SaveSystem.has_active_character() and SaveSystem.character_data.has("inventory"):
+				var saved_inv = SaveSystem.character_data["inventory"]
+				inv.wood = saved_inv.get("wood", 0)
+				inv.stone = saved_inv.get("stone", 0)
+				inv.iron = saved_inv.get("iron", 0)
+				inv.meat = saved_inv.get("meat", 0)
+				inv.bone = saved_inv.get("bone", 0)
+				
+			if hud and hud.has_method("update_resources"):
+				inv.resources_updated.connect(hud.update_resources)
+				hud.update_resources(inv.wood, inv.stone, inv.iron)
 			
 	if building_mgr and building_mgr.has_method("setup"):
 		building_mgr.setup(player, hud)
@@ -88,32 +115,41 @@ func _process(_delta: float) -> void:
 					"Dawn": time_offset = -3.0
 					"Day": time_offset = 0.0
 					
+				# Talent protection against cold (e.g. Linh Mộc Dục Hỏa / Niết Bàn)
+				if not GameState.active_talent.is_empty():
+					if GameState.active_talent.get("id") in ["a_wood_spirit", "s_phoenix_rebirth"]:
+						time_offset = 0.0
+						biome_offset = 0.0
+						
 				stats.target_temperature = clamp(base_body + biome_offset + time_offset, 28.0, 37.2)
 
+# ==========================================
+# PERMADEATH: NHÂN VẬT CHẾT LÀ MẤT VĨNH VIỄN
+# ==========================================
 func _on_player_died() -> void:
-	if player and campfire:
-		player.global_position = campfire.global_position + Vector2(20, 0)
-		var stats = player.get_node_or_null("SurvivalStats")
-		if stats and stats.has_method("respawn"):
-			stats.respawn()
-		
-		var label = Label.new()
-		label.text = "HỒI SINH AN TOÀN TẠI ĐỐNG LỬA TRẠI!"
-		label.top_level = true
-		label.global_position = player.global_position + Vector2(-120, -50)
-		label.modulate = Color(1.0, 0.4, 0.4)
-		label.add_theme_font_size_override("font_size", 14)
-		add_child(label)
-		var tween = label.create_tween().set_parallel(true)
-		tween.tween_property(label, "position:y", label.position.y - 30.0, 1.5)
-		tween.tween_property(label, "modulate:a", 0.0, 1.5)
-		tween.chain().tween_callback(label.queue_free)
+	var talent = GameState.active_talent
+	var day = GameState.current_day
+	var sp = GameState.total_season_sp
+	
+	# 1. Atomic wipe of character & update account
+	var result = SaveSystem.kill_character_atomic(day, sp, talent)
+	EventBus.player_died.emit(day, sp, result.get("record_broken", false))
+	
+	# 2. Show dedicated Permadeath modal
+	if hud and hud.has_method("show_permadeath"):
+		hud.show_permadeath(result)
 
 func _on_player_spawn_found(spawn_pos: Vector2) -> void:
 	if player:
 		player.global_position = spawn_pos
 	if campfire:
 		campfire.global_position = spawn_pos + Vector2(60, 0)
+		
+	# Spawn Dungeon Entrance Portal nearby
+	if not dungeon_entrance_node:
+		dungeon_entrance_node = DungeonEntranceScene.instantiate()
+		dungeon_entrance_node.global_position = spawn_pos + Vector2(240, -140)
+		add_child(dungeon_entrance_node)
 
 func _on_resource_dropped(item_name: String, amount: int, pos: Vector2) -> void:
 	var item = DroppedItemScene.instantiate()

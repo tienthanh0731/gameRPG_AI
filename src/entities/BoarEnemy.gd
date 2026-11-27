@@ -14,6 +14,7 @@ enum BoarState {
 var current_health: int = 35
 @export var move_speed: float = 110.0
 @export var attack_damage: int = 12
+@export var is_elite: bool = false
 
 var state: BoarState = BoarState.IDLE
 var target_entity: Node2D = null
@@ -32,7 +33,19 @@ var anim_fps: float = 8.0
 var state_timer: float = 0.0
 
 func _ready() -> void:
+	var mult = 1.0
+	if GameState:
+		mult = GameState.get_monster_power_mult()
+	if is_elite:
+		mult *= 2.5
+		modulate = Color(1.8, 0.4, 0.4)
+		scale = Vector2(1.8, 1.8)
+		move_speed = 130.0
+		
+	max_health = int(max_health * mult)
+	attack_damage = int(attack_damage * mult)
 	current_health = max_health
+	
 	_ensure_textures()
 	if not sprite:
 		sprite = get_node_or_null("Sprite2D")
@@ -134,6 +147,8 @@ func _die() -> void:
 		col.set_deferred("disabled", true)
 		
 	boar_died.emit(global_position)
+	if EventBus:
+		EventBus.enemy_killed.emit("Quái Dã Thú" if not is_elite else "Cổ Thú Thống Lĩnh", is_elite, global_position)
 	if is_inside_tree():
 		get_tree().create_timer(1.0).timeout.connect(queue_free)
 	else:
