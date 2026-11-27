@@ -4,8 +4,13 @@ extends CanvasLayer
 @onready var health_bar: ProgressBar = $MarginContainer/VBoxContainer/HealthBar
 @onready var stamina_bar: ProgressBar = $MarginContainer/VBoxContainer/StaminaBar
 @onready var temp_label: Label = $MarginContainer/VBoxContainer/TempLabel
+@onready var biome_label: Label = $TopContainer/BiomeLabel
 @onready var time_label: Label = $TopContainer/TimeLabel
 @onready var phase_label: Label = $TopContainer/PhaseLabel
+
+func update_biome(biome_name: String) -> void:
+	if biome_label:
+		biome_label.text = "Địa hình: %s" % biome_name
 
 func update_health(current: float, max_val: float) -> void:
 	if health_bar:

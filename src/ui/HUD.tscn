@@ -45,11 +45,17 @@ text = "Thân nhiệt: 37.0°C"
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -150.0
+offset_left = -200.0
 offset_top = 15.0
-offset_right = 150.0
-offset_bottom = 75.0
+offset_right = 200.0
+offset_bottom = 95.0
 grow_horizontal = 2
+
+[node name="BiomeLabel" type="Label" parent="TopContainer"]
+modulate = Color(0.5, 0.9, 1, 1)
+layout_mode = 2
+horizontal_alignment = 1
+text = "Địa hình: Khu Rừng Nguyên Sinh"
 
 [node name="TimeLabel" type="Label" parent="TopContainer"]
 layout_mode = 2
