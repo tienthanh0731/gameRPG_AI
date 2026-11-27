@@ -1,0 +1,81 @@
+[gd_scene load_steps=6 format=3 uid="uid://world_boss_scene_01"]
+
+[ext_resource type="Script" path="res://src/world/boss/WorldBoss.gd" id="1_boss_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/boar/BoarIdle-Sheet.png" id="2_boss_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 42.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_panel"]
+bg_color = Color(0.12, 0.05, 0.05, 0.92)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.3, 0.2, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_hp_fill"]
+bg_color = Color(0.9, 0.15, 0.15, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="WorldBoss" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_boss_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(1.8, 0.5, 0.2, 1)
+scale = Vector2(2.8, 2.8)
+texture = ExtResource("2_boss_tex")
+offset = Vector2(0, -8)
+hframes = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -6)
+shape = SubResource("CircleShape2D_boss")
+
+[node name="BossHUD" type="CanvasLayer" parent="."]
+
+[node name="BossBarPanel" type="PanelContainer" parent="BossHUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 85.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_boss_panel")
+
+[node name="VBox" type="VBoxContainer" parent="BossHUD/BossBarPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LabelTitle" type="Label" parent="BossHUD/BossBarPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "👑 [THÚ VƯƠNG HOANG CỔ] THÁI CỔ MA HÙNG"
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="BossHUD/BossBarPanel/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_boss_hp_fill")
+max_value = 450.0
+value = 450.0
+show_percentage = false
+
+[node name="LabelContribution" type="Label" parent="BossHUD/BossBarPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Đóng góp của bạn: 0 Sát thương (0.0%) ➔ +0 Điểm Liên Minh"
+horizontal_alignment = 1

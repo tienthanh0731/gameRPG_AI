@@ -17,6 +17,7 @@ var OutpostScene = load("res://src/world/outpost/Outpost.tscn")
 var current_biome_temp: float = 28.0
 var dungeon_entrance_node: Node2D = null
 var outpost_node: Node2D = null
+var starter_house_node: Node2D = null
 
 var tex_wood_icon: Texture2D
 var tex_stone_icon: Texture2D
@@ -148,6 +149,14 @@ func _on_player_spawn_found(spawn_pos: Vector2) -> void:
 		player.global_position = spawn_pos
 	if campfire:
 		campfire.global_position = spawn_pos + Vector2(60, 0)
+		
+	# Spawn starter Small Wooden House (Nhà Gỗ Nhỏ) for player shelter
+	if not starter_house_node:
+		var house_scene = load("res://src/world/structures/WoodenHouse.tscn")
+		if house_scene:
+			starter_house_node = house_scene.instantiate()
+			starter_house_node.global_position = spawn_pos + Vector2(0, -96)
+			add_child(starter_house_node)
 		
 	# Spawn Dungeon Entrance Portal nearby
 	if not dungeon_entrance_node:

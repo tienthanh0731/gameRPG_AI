@@ -117,10 +117,10 @@ func toggle_map() -> void:
 func update_tool(tool_id: int) -> void:
 	if tool_label:
 		match tool_id:
-			0: tool_label.text = "[Phím 1] Đang cầm: RÌU ĐỐN CỦI (Click chuột để chặt) | [Phím B] Xây dựng"
-			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột để đập đá) | [Phím B] Xây dựng"
-			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột để chém) | [Phím B] Xây dựng"
-			3: tool_label.text = "[CHẾ ĐỘ XÂY DỰNG] Phím 4: Tường (4 Gỗ) | Phím 5: Cổng (6 Gỗ) | Phím 6: Bẫy (3 Gỗ) | [B] Thoát"
+			0: tool_label.text = "[Phím 1] RÌU ĐỐN CỦI (Click chặt cây / Phá công trình) | [Phím B] Xây dựng"
+			1: tool_label.text = "[Phím 2] CUỐC ĐÀO MỎ (Click đập đá / Phá công trình) | [Phím B] Xây dựng"
+			2: tool_label.text = "[Phím 3] KIẾM CHIẾN ĐẤU (Click tấn công) | [Phím B] Xây dựng"
+			3: tool_label.text = "[XÂY DỰNG] Chuột Trái: Đặt | Chuột Phải: Phá Dỡ | [4] Tường [5] Cổng [6] Chông [7] Nhà Gỗ | [B] Đóng"
 
 func update_inventory(inv_dict: Dictionary) -> void:
 	if wood_label: wood_label.text = "🪵 Gỗ: %d" % inv_dict.get("wood", 0)

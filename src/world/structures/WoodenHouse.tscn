@@ -1,0 +1,65 @@
+[gd_scene load_steps=7 format=3 uid="uid://cwoodhouse01"]
+
+[ext_resource type="Script" path="res://src/world/structures/WoodenHouse.gd" id="1_house_script"]
+[ext_resource type="Texture2D" path="res://assets/buildings/Yellow Buildings/House1.png" id="2_house_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_house"]
+size = Vector2(96, 52)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_shelter"]
+radius = 90.0
+
+[sub_resource type="Gradient" id="Gradient_house_light"]
+colors = PackedColorArray(1, 0.85, 0.5, 0.9, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_house_light"]
+gradient = SubResource("Gradient_house_light")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[node name="WoodenHouse" type="StaticBody2D" groups=["house", "structure"]]
+y_sort_enabled = true
+collision_layer = 1
+collision_mask = 6
+script = ExtResource("1_house_script")
+structure_type = 3
+structure_name = "Nhà Gỗ Nhỏ"
+max_health = 250
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_house_tex")
+offset = Vector2(0, -64)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -22)
+shape = SubResource("RectangleShape2D_house")
+
+[node name="ShelterArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelterArea"]
+position = Vector2(0, -10)
+shape = SubResource("CircleShape2D_shelter")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(0, -45)
+color = Color(1, 0.85, 0.5, 1)
+energy = 0.85
+texture = SubResource("GradientTexture2D_house_light")
+texture_scale = 1.3
+
+[node name="RestPrompt" type="Label" parent="."]
+visible = false
+top_level = true
+offset_left = -90.0
+offset_top = -140.0
+offset_right = 90.0
+offset_bottom = -120.0
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "[Phím E] Nghỉ ngơi trong Nhà Gỗ"
+horizontal_alignment = 1

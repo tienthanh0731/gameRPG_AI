@@ -3,12 +3,14 @@ extends Node2D
 const WallScene = preload("res://src/world/structures/WoodenWall.tscn")
 const DoorScene = preload("res://src/world/structures/WoodenDoor.tscn")
 const SpikeScene = preload("res://src/world/structures/SpikeTrap.tscn")
+const HouseScene = preload("res://src/world/structures/WoodenHouse.tscn")
 
 enum BuildType {
 	NONE,
 	WALL,
 	DOOR,
-	SPIKE
+	SPIKE,
+	HOUSE
 }
 
 @export var is_building: bool = false
@@ -18,6 +20,7 @@ var preview_sprite: Sprite2D
 var tex_wall: Texture2D
 var tex_door: Texture2D
 var tex_spike: Texture2D
+var tex_house: Texture2D
 
 var player: CharacterBody2D
 var inventory: Node
@@ -37,9 +40,11 @@ func _init_preview_sprite() -> void:
 	var p_wall = "res://assets/buildings/structures/wall_wood.png"
 	var p_door = "res://assets/buildings/structures/door_wood_closed.png"
 	var p_spike = "res://assets/buildings/structures/spike_trap.png"
+	var p_house = "res://assets/buildings/Yellow Buildings/House1.png"
 	if ResourceLoader.exists(p_wall): tex_wall = load(p_wall)
 	if ResourceLoader.exists(p_door): tex_door = load(p_door)
 	if ResourceLoader.exists(p_spike): tex_spike = load(p_spike)
+	if ResourceLoader.exists(p_house): tex_house = load(p_house)
 
 func setup(p_player: CharacterBody2D, p_hud: CanvasLayer) -> void:
 	player = p_player
@@ -66,11 +71,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				select_build(BuildType.DOOR)
 			elif event.keycode == KEY_6:
 				select_build(BuildType.SPIKE)
+			elif event.keycode == KEY_7:
+				select_build(BuildType.HOUSE)
 		elif event.keycode == KEY_E:
 			_try_interact_door()
 			
-	if is_building and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_try_place_structure()
+	if is_building and event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_try_place_structure()
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			_try_demolish_structure_under_cursor()
 
 func toggle_building_mode() -> void:
 	_ensure_references()
@@ -83,6 +93,7 @@ func toggle_building_mode() -> void:
 		select_build(BuildType.WALL)
 		if hud and hud.has_method("update_tool"):
 			hud.update_tool(3) # Building mode index
+		_spawn_hint("[CHẾ ĐỘ XÂY DỰNG] Chuột Trái: Đặt | Chuột Phải: Phá Dỡ (Hoàn trả tài nguyên)", Color(0.4, 1.0, 0.4))
 	else:
 		if player and player.has_signal("tool_changed"):
 			player.tool_changed.emit(player.current_tool)
@@ -101,6 +112,9 @@ func select_build(type: BuildType) -> void:
 		BuildType.SPIKE:
 			preview_sprite.texture = tex_spike
 			preview_sprite.offset = Vector2(0, -12)
+		BuildType.HOUSE:
+			preview_sprite.texture = tex_house
+			preview_sprite.offset = Vector2(0, -64)
 
 func _process(_delta: float) -> void:
 	_ensure_references()
@@ -137,6 +151,8 @@ func _can_afford_current() -> bool:
 			return inventory.has_resources(6, 2)
 		BuildType.SPIKE:
 			return inventory.has_resources(3, 1)
+		BuildType.HOUSE:
+			return inventory.has_resources(15, 5)
 	return false
 
 func _try_place_structure() -> void:
@@ -155,6 +171,12 @@ func _try_place_structure() -> void:
 		_spawn_hint("Vị trí quá xa!", Color(1.0, 0.4, 0.4))
 		return
 
+	# Prevent placing on existing structures
+	for existing in get_tree().get_nodes_in_group("structure"):
+		if existing is Node2D and existing.global_position.distance_to(grid_pos) < 16.0:
+			_spawn_hint("Ô này đã có công trình!", Color(1.0, 0.4, 0.4))
+			return
+
 	var struct_instance: Node2D = null
 	match current_build:
 		BuildType.WALL:
@@ -166,11 +188,92 @@ func _try_place_structure() -> void:
 		BuildType.SPIKE:
 			inventory.consume_resources(3, 1)
 			struct_instance = SpikeScene.instantiate()
+		BuildType.HOUSE:
+			inventory.consume_resources(15, 5)
+			struct_instance = HouseScene.instantiate()
 			
 	if struct_instance:
-		struct_instance.global_position = grid_pos
-		get_parent().add_child(struct_instance)
+		_add_structure(struct_instance, int(current_build), grid_pos, -1)
 		_spawn_hint("XÂY DỰNG THÀNH CÔNG!", Color(0.4, 1.0, 0.4))
+
+# ==========================================
+# PHÁ BỎ CÔNG TRÌNH (CHUỘT PHẢI TRONG CHẾ ĐỘ XÂY DỰNG)
+# ==========================================
+func _try_demolish_structure_under_cursor() -> void:
+	_ensure_references()
+	if not player:
+		return
+	var mouse_pos = get_global_mouse_position()
+	var structures = get_tree().get_nodes_in_group("structure")
+	var target_struct: Node2D = null
+	var min_dist = 60.0
+	
+	for st in structures:
+		if st is Node2D and is_instance_valid(st) and not st.is_queued_for_deletion():
+			var dist = st.global_position.distance_to(mouse_pos)
+			if dist < min_dist:
+				min_dist = dist
+				target_struct = st
+				
+	if not target_struct:
+		_spawn_hint("Không có công trình nào dưới chuột để phá dỡ!", Color(1.0, 0.6, 0.4))
+		return
+		
+	if target_struct.global_position.distance_to(player.global_position) > 260.0:
+		_spawn_hint("Vị trí quá xa để phá dỡ!", Color(1.0, 0.4, 0.4))
+		return
+		
+	var s_name = target_struct.get("structure_name") if "structure_name" in target_struct else "Công trình"
+	if target_struct.has_method("demolish"):
+		target_struct.demolish(true)
+	elif target_struct.has_method("take_damage"):
+		target_struct.take_damage(9999)
+	else:
+		target_struct.queue_free()
+		
+	_spawn_hint("ĐÃ THÁO DỠ: %s (Hoàn trả tài nguyên)!" % s_name, Color(0.4, 1.0, 0.5))
+
+# ==========================================
+# LƯU / KHÔI PHỤC CĂN CỨ
+# ==========================================
+func _add_structure(inst: Node2D, build_type: int, pos: Vector2, hp: int) -> void:
+	inst.global_position = pos
+	inst.set_meta("build_type", build_type)
+	get_parent().add_child(inst)
+	if hp > 0 and "current_health" in inst:
+		inst.current_health = hp
+	if inst.has_signal("structure_destroyed"):
+		inst.structure_destroyed.connect(func():
+			if ClassDB.class_exists("EventBus") or has_node("/root/EventBus"):
+				var eb = get_node_or_null("/root/EventBus")
+				if eb and eb.has_signal("structure_destroyed"):
+					eb.structure_destroyed.emit(pos)
+		)
+
+func _scene_for(build_type: int) -> PackedScene:
+	match build_type:
+		BuildType.DOOR: return DoorScene
+		BuildType.SPIKE: return SpikeScene
+		BuildType.HOUSE: return HouseScene
+	return WallScene
+
+func serialize_structures() -> Array:
+	var out: Array = []
+	for st in get_tree().get_nodes_in_group("structure"):
+		if st is Node2D and is_instance_valid(st) and not st.is_queued_for_deletion() and st.has_meta("build_type"):
+			if "current_health" in st and st.current_health <= 0:
+				continue
+			out.append({
+				"type": int(st.get_meta("build_type")),
+				"x": st.global_position.x, "y": st.global_position.y,
+				"hp": int(st.current_health) if "current_health" in st else -1,
+			})
+	return out
+
+func restore_structures(list: Array) -> void:
+	for d in list:
+		var t := int(d.get("type", BuildType.WALL))
+		_add_structure(_scene_for(t).instantiate(), t, Vector2(float(d.get("x", 0)), float(d.get("y", 0))), int(d.get("hp", -1)))
 
 func _try_interact_door() -> void:
 	if not player:
