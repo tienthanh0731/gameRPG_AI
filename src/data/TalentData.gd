@@ -215,11 +215,16 @@ const TALENT_CATALOG = {
 }
 
 static func roll_rank() -> Rank:
-	var roll = randf() * 100.0
+	return _rank_from_roll(randf() * 100.0)
+
+static func roll_rank_with(rng: RandomNumberGenerator) -> Rank:
+	return _rank_from_roll(rng.randf() * 100.0)
+
+static func _rank_from_roll(roll: float) -> Rank:
 	var acc = 0.0
 	for entry in RANK_WEIGHTS:
 		acc += entry.weight
-		if roll <= acc:
+		if roll < acc:
 			return entry.rank
 	return Rank.F
 

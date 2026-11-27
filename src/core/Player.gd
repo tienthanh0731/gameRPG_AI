@@ -60,7 +60,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_trigger_action()
 	elif event is InputEventKey and event.pressed:
-		if event.keycode == KEY_1:
+		if event.keycode == KEY_F:
+			_try_eat()
+		elif event.keycode == KEY_1:
 			current_tool = ToolMode.AXE
 			tool_changed.emit(current_tool)
 		elif event.keycode == KEY_2:
@@ -219,3 +221,9 @@ func _try_hit_interactable() -> void:
 
 	var target = candidates[0]
 	target.take_hit(current_tool)
+
+## [F] Ăn 1 Thịt Rừng: +30 no, +10 HP.
+func _try_eat() -> void:
+	if inventory and survival_stats and inventory.has_method("consume_meat"):
+		if inventory.consume_meat():
+			survival_stats.eat(30.0, 10.0)

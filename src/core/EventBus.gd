@@ -15,6 +15,8 @@ signal dusk_warning(wave_size: int, monster_type: String)
 signal night_started(wave_size: int)
 signal raid_wave_cleared(day_num: int)
 signal day_ended(day_num: int, sp_today: int, rank_tier: String, chest_reward: Dictionary)
+signal day_summary_ready(summary: Dictionary)
+signal talent_changed(talent_data: Dictionary)
 
 # Score & Points
 signal sp_added(amount: int, reason: String)

@@ -1,10 +1,16 @@
 extends CanvasLayer
+## HUD — chỉ hiển thị. Nhận dữ liệu từ Main (call down) và EventBus.
+
+signal reroll_requested()
+
+const Minimap = preload("res://src/ui/Minimap.gd")
 
 @onready var health_label: Label = $LeftPanel/MarginContainer/VBoxContainer/HealthLabel
 @onready var health_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/HealthBar
 @onready var stamina_label: Label = $LeftPanel/MarginContainer/VBoxContainer/StaminaLabel
 @onready var stamina_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/StaminaBar
 @onready var temp_label: Label = $LeftPanel/MarginContainer/VBoxContainer/TempLabel
+@onready var left_vbox: VBoxContainer = $LeftPanel/MarginContainer/VBoxContainer
 
 @onready var wood_label: Label = $RightPanel/MarginContainer/VBoxContainer/WoodLabel
 @onready var stone_label: Label = $RightPanel/MarginContainer/VBoxContainer/StoneLabel
@@ -12,11 +18,13 @@ extends CanvasLayer
 @onready var sp_label: Label = $RightPanel/MarginContainer/VBoxContainer/SPLabel
 @onready var talent_label: Label = $RightPanel/MarginContainer/VBoxContainer/TalentLabel
 @onready var btn_leaderboard: Button = $RightPanel/MarginContainer/VBoxContainer/BtnLeaderboard
+@onready var right_vbox: VBoxContainer = $RightPanel/MarginContainer/VBoxContainer
 
 @onready var day_label: Label = $TopPanel/MarginContainer/VBoxContainer/DayLabel
 @onready var biome_label: Label = $TopPanel/MarginContainer/VBoxContainer/BiomeLabel
 @onready var time_label: Label = $TopPanel/MarginContainer/VBoxContainer/TimeLabel
 @onready var phase_label: Label = $TopPanel/MarginContainer/VBoxContainer/PhaseLabel
+@onready var top_vbox: VBoxContainer = $TopPanel/MarginContainer/VBoxContainer
 
 @onready var tool_label: Label = $BottomPanel/ToolLabel
 
@@ -24,121 +32,183 @@ extends CanvasLayer
 @onready var permadeath_ui: Control = $PermadeathUI
 @onready var leaderboard_ui: Control = $LeaderboardUI
 
+var hunger_label: Label
+var hunger_bar: ProgressBar
+var tide_label: Label
+var extra_inv_label: Label
+var minimap: Control
+
 func _ready() -> void:
-	if day_summary_ui: day_summary_ui.visible = false
-	if permadeath_ui: permadeath_ui.visible = false
-	if leaderboard_ui: leaderboard_ui.visible = false
-	
-	if btn_leaderboard:
-		btn_leaderboard.pressed.connect(toggle_leaderboard)
-		
-	if day_summary_ui and day_summary_ui.has_signal("open_leaderboard_requested"):
-		day_summary_ui.open_leaderboard_requested.connect(toggle_leaderboard)
-		
-	if EventBus:
-		EventBus.score_updated.connect(_on_score_updated)
-		EventBus.day_ended.connect(_on_day_ended)
-		
+	day_summary_ui.visible = false
+	permadeath_ui.visible = false
+	leaderboard_ui.visible = false
+	btn_leaderboard.pressed.connect(toggle_leaderboard)
+	day_summary_ui.open_leaderboard_requested.connect(toggle_leaderboard)
+	EventBus.score_updated.connect(_on_score_updated)
+	EventBus.day_summary_ready.connect(_on_day_summary)
+	EventBus.talent_changed.connect(func(_t): update_talent_display())
+	EventBus.sp_added.connect(func(a, r): show_toast("+%d SP • %s" % [a, r], Color(1.0, 0.85, 0.3)))
+	_build_extra_widgets()
 	update_talent_display()
 	update_day_display(GameState.current_day)
+	_on_score_updated(GameState.today_sp, GameState.character_total_sp)
+
+func _build_extra_widgets() -> void:
+	hunger_label = Label.new()
+	hunger_label.text = "Đói (No): 100"
+	left_vbox.add_child(hunger_label)
+	left_vbox.move_child(hunger_label, temp_label.get_index())
+	hunger_bar = ProgressBar.new()
+	hunger_bar.max_value = 100
+	hunger_bar.show_percentage = false
+	hunger_bar.custom_minimum_size = Vector2(0, 10)
+	left_vbox.add_child(hunger_bar)
+	left_vbox.move_child(hunger_bar, temp_label.get_index())
+
+	tide_label = Label.new()
+	tide_label.add_theme_font_size_override("font_size", 13)
+	top_vbox.add_child(tide_label)
+
+	extra_inv_label = Label.new()
+	right_vbox.add_child(extra_inv_label)
+	right_vbox.move_child(extra_inv_label, btn_leaderboard.get_index())
+
+	var hint := Label.new()
+	hint.text = "[F] Ăn thịt  •  [T] Dùng Đan Reroll  •  [L] Bảng xếp hạng"
+	hint.add_theme_font_size_override("font_size", 11)
+	right_vbox.add_child(hint)
+
+	minimap = Minimap.new()
+	minimap.custom_minimum_size = Vector2(150, 150)
+	minimap.size = Vector2(150, 150)
+	minimap.anchor_left = 1.0
+	minimap.anchor_right = 1.0
+	minimap.anchor_top = 1.0
+	minimap.anchor_bottom = 1.0
+	minimap.offset_left = -166
+	minimap.offset_right = -16
+	minimap.offset_top = -210
+	minimap.offset_bottom = -60
+	add_child(minimap)
+	move_child(minimap, 0)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_T:
+			reroll_requested.emit()
+		elif event.keycode == KEY_L:
+			toggle_leaderboard()
 
 func update_talent_display() -> void:
-	if talent_label:
-		if GameState and not GameState.active_talent.is_empty():
-			var t = GameState.active_talent
-			var rank_str = t.get("rank_str", "F")
-			var name_str = t.get("name", "Vô Thiên Phú")
-			var col = Color.from_string(t.get("color_hex", "ffffff"), Color.WHITE)
-			talent_label.text = "✦ [%s] %s" % [rank_str, name_str]
-			talent_label.modulate = col
-		else:
-			talent_label.text = "✦ [F] Cần Cù Bù Thông Minh"
-			talent_label.modulate = Color(0.7, 0.7, 0.7)
+	var t := GameState.active_talent
+	if t.is_empty():
+		talent_label.text = "✦ (không có thiên phú)"
+		return
+	talent_label.text = "✦ [%s] %s" % [t.get("rank_str", "F"), t.get("name", "")]
+	talent_label.modulate = Color.from_string(t.get("color_hex", "ffffff"), Color.WHITE)
+	talent_label.tooltip_text = t.get("desc", "")
 
 func update_day_display(day_num: int) -> void:
-	if day_label:
-		var phase_desc = GameState.get_difficulty_phase_name(day_num) if GameState else "Tân Thủ"
-		day_label.text = "NGÀY SINH TỒN: %d (%s)" % [day_num, phase_desc]
+	day_label.text = "NGÀY SINH TỒN: %d (%s)" % [day_num, GameState.get_difficulty_phase_name(day_num)]
 
 func _on_score_updated(today_sp: int, total_sp: int) -> void:
-	if sp_label:
-		sp_label.text = "⭐ SP Hôm Nay: +%d (Mùa: %d)" % [today_sp, total_sp]
+	sp_label.text = "⭐ SP Hôm Nay: %d (Nhân vật: %d)" % [today_sp, total_sp]
 
-func _on_day_ended(day_num: int, sp_today: int, rank_tier: String, chest: Dictionary) -> void:
-	if day_summary_ui:
-		day_summary_ui.setup({
-			"day": day_num,
-			"today_sp": sp_today,
-			"rank_tier": rank_tier,
-			"chest": chest,
-			"monsters_killed": GameState.monsters_killed_today if GameState else 0
-		})
-		day_summary_ui.visible = true
-		get_tree().paused = true
-	update_day_display(day_num + 1)
+func _on_day_summary(summary: Dictionary) -> void:
+	day_summary_ui.setup(summary)
+	day_summary_ui.visible = true
+	get_tree().paused = true
+	update_day_display(GameState.current_day)
 
 func show_permadeath(summary: Dictionary) -> void:
-	if permadeath_ui:
-		permadeath_ui.setup(summary)
-		permadeath_ui.visible = true
-		get_tree().paused = true
+	permadeath_ui.setup(summary)
+	permadeath_ui.visible = true
+	get_tree().paused = true
 
 func toggle_leaderboard() -> void:
-	if leaderboard_ui:
-		leaderboard_ui.visible = not leaderboard_ui.visible
+	leaderboard_ui.visible = not leaderboard_ui.visible
+	if leaderboard_ui.visible and leaderboard_ui.has_method("refresh"):
+		leaderboard_ui.refresh()
 
 func update_tool(tool_id: int) -> void:
-	if tool_label:
-		match tool_id:
-			0: tool_label.text = "[Phím 1] Đang cầm: RÌU ĐỐN CỦI (Click chuột để chặt) | [Phím B] Xây dựng"
-			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột để đập đá) | [Phím B] Xây dựng"
-			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột để chém) | [Phím B] Xây dựng"
-			3: tool_label.text = "[CHẾ ĐỘ XÂY DỰNG] Phím 4: Tường (4 Gỗ) | Phím 5: Cổng (6 Gỗ) | Phím 6: Bẫy (3 Gỗ) | [B] Thoát"
+	match tool_id:
+		0: tool_label.text = "[1] RÌU (chặt cây) | [2] Cuốc | [3] Kiếm | [B] Xây dựng | [E] Vào phó bản / mở cổng"
+		1: tool_label.text = "[2] CUỐC (đập đá, quặng) | [1] Rìu | [3] Kiếm | [B] Xây dựng"
+		2: tool_label.text = "[3] KIẾM (chiến đấu) | [1] Rìu | [2] Cuốc | [Space] Lướt né | [B] Xây dựng"
+		3: tool_label.text = "[XÂY DỰNG] 4: Tường (4 Gỗ) | 5: Cổng (6 Gỗ, 2 Đá) | 6: Bẫy (3 Gỗ, 1 Đá) | Click đặt | [B] Thoát"
 
 func update_resources(wood: int, stone: int, iron: int) -> void:
-	if wood_label:
-		wood_label.text = "🪵 Gỗ: %d" % wood
-	if stone_label:
-		stone_label.text = "🪨 Đá: %d" % stone
-	if iron_label:
-		iron_label.text = "⛏️ Sắt: %d" % iron
+	wood_label.text = "🪵 Gỗ: %d" % wood
+	stone_label.text = "🪨 Đá: %d" % stone
+	iron_label.text = "⛏️ Sắt: %d" % iron
+
+func update_inventory(inv: Dictionary) -> void:
+	update_resources(int(inv.get("wood", 0)), int(inv.get("stone", 0)), int(inv.get("iron", 0)))
+	extra_inv_label.text = "🍖 Thịt: %d  🦴 Da/Xương: %d  💊 Đan Reroll: %d" % [
+		inv.get("meat", 0), inv.get("bone", 0), inv.get("reroll_pill", 0)]
 
 func update_health(current: float, max_val: float) -> void:
-	if health_bar:
-		health_bar.max_value = max_val
-		health_bar.value = current
-	if health_label:
-		health_label.text = "Máu (HP): %d / %d" % [int(current), int(max_val)]
+	health_bar.max_value = max_val
+	health_bar.value = current
+	health_label.text = "Máu (HP): %d / %d" % [int(current), int(max_val)]
 
 func update_stamina(current: float, max_val: float) -> void:
-	if stamina_bar:
-		stamina_bar.max_value = max_val
-		stamina_bar.value = current
-	if stamina_label:
-		stamina_label.text = "Thể lực: %d / %d" % [int(current), int(max_val)]
+	stamina_bar.max_value = max_val
+	stamina_bar.value = current
+	stamina_label.text = "Thể lực: %d / %d" % [int(current), int(max_val)]
+
+func update_hunger(value: float) -> void:
+	if hunger_bar:
+		hunger_bar.value = value
+		hunger_label.text = "Đói (No): %d / 100%s" % [int(value), "  ⚠ ĐANG ĐÓI!" if value <= 0.0 else ""]
+		hunger_label.modulate = Color(1, 0.4, 0.3) if value < 25.0 else Color.WHITE
 
 func update_temperature(temp: float) -> void:
-	if temp_label:
-		temp_label.text = "Thân nhiệt: %.1f°C" % temp
-		if temp < 35.0:
-			temp_label.modulate = Color(0.4, 0.75, 1.0)
-		elif temp > 38.0:
-			temp_label.modulate = Color(1.0, 0.45, 0.2)
-		else:
-			temp_label.modulate = Color.WHITE
+	temp_label.text = "Thân nhiệt: %.1f°C" % temp
+	if temp < 35.0:
+		temp_label.modulate = Color(0.4, 0.75, 1.0)
+	elif temp > 38.0:
+		temp_label.modulate = Color(1.0, 0.45, 0.2)
+	else:
+		temp_label.modulate = Color.WHITE
 
 func update_biome(biome_name: String) -> void:
-	if biome_label:
-		biome_label.text = "Địa hình: %s" % biome_name
+	biome_label.text = "Địa hình: %s" % biome_name
 
 func update_time(hour: int, minute: int) -> void:
-	if time_label:
-		time_label.text = "Thời gian: %02d:%02d" % [hour, minute]
+	time_label.text = "Thời gian: %02d:%02d" % [hour, minute]
+	if tide_label:
+		var p := GameState.get_tonight_preview()
+		var kind := "Thú triều" if p.is_real else "Trinh sát"
+		var h := GameState.hours_until_tide()
+		if hour >= 20 or hour < 5 or (hour == 19 and minute >= 30):
+			tide_label.text = "☠ %s đang tấn công! (%d quái, hướng %s)" % [kind, p.count, ", ".join(p.direction_names)]
+			tide_label.modulate = Color(1, 0.35, 0.35)
+		else:
+			# 1 ngày game = 300 giây thật → 1 giờ game = 12.5 giây
+			var real_sec := int(h * 300.0 / 24.0)
+			tide_label.text = "⏳ %s sau %dh%02d (≈%ds) • %d quái" % [kind, int(h), int((h - int(h)) * 60), real_sec, p.count]
+			tide_label.modulate = Color(1, 0.7, 0.3) if h < 3.0 else Color(0.85, 0.85, 0.85)
 
 func update_phase(phase_name: String) -> void:
-	if phase_label:
-		match phase_name:
-			"Day": phase_label.text = "[BAN NGÀY] Khám phá, Thu thập & Tìm Phó bản"
-			"Dusk": phase_label.text = "[HOÀNG HÔN] CẢNH BÁO: Thú triều sắp tới! Hãy gia cố tường!"
-			"Night": phase_label.text = "[BAN ĐÊM] THÚ TRIỀU TẤN CÔNG CĂN CỨ!"
-			"Dawn": phase_label.text = "[RẠNG ĐÔNG] Sống sót qua đêm thành công (+50 SP)"
+	match phase_name:
+		"Day": phase_label.text = "[BAN NGÀY] Khai thác & dọn phó bản (%d cửa hôm nay)" % GameState.get_dungeon_count()
+		"Dusk": phase_label.text = "[HOÀNG HÔN] Thú triều sắp tới! Gia cố tường, đặt bẫy!"
+		"Night": phase_label.text = "[BAN ĐÊM] THÚ TRIỀU TẤN CÔNG CĂN CỨ!"
+		"Dawn": phase_label.text = "[RẠNG ĐÔNG] Đã qua đêm"
+
+func update_minimap(player_pos: Vector2, base_pos: Vector2, dungeons: Array) -> void:
+	if minimap:
+		minimap.set_points(player_pos, base_pos, dungeons)
+
+func show_toast(text: String, col: Color = Color.WHITE) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.modulate = col
+	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.position = Vector2(500, 560)
+	add_child(lbl)
+	var tw := lbl.create_tween().set_parallel(true)
+	tw.tween_property(lbl, "position:y", 520.0, 1.6)
+	tw.tween_property(lbl, "modulate:a", 0.0, 1.6).set_delay(0.6)
+	tw.chain().tween_callback(lbl.queue_free)

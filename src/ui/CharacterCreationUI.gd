@@ -37,6 +37,11 @@ func _ready() -> void:
 	else:
 		btn_resume.visible = false
 		
+	_build_profile_button()
+	# Thiên phú đã roll trước đó (chưa dùng) → hiển thị lại, KHÔNG roll mới
+	if ServerSim.has_pending_talent():
+		rolled_talent = ServerSim.get_or_roll_pending_talent()
+		_show_talent(rolled_talent)
 	# Random initial default name
 	if input_name.text.is_empty():
 		input_name.text = "Xuyên Không Giả #" + str(randi() % 900 + 100)
@@ -51,7 +56,7 @@ func _update_account_display() -> void:
 	]
 
 func _on_btn_awaken_pressed() -> void:
-	if is_rolling: return
+	if is_rolling or not rolled_talent.is_empty(): return
 	is_rolling = true
 	btn_awaken.disabled = true
 	btn_start.disabled = true
@@ -77,8 +82,12 @@ func _roll_tick_preview() -> void:
 
 func _finish_roll() -> void:
 	is_rolling = false
-	btn_awaken.disabled = false
-	rolled_talent = TalentData.roll_talent()
+	# Roll do "server" thực hiện và lưu ngay → không thể roll lại bằng cách bấm lại/thoát game
+	rolled_talent = ServerSim.get_or_roll_pending_talent()
+	_show_talent(rolled_talent)
+
+func _show_talent(t: Dictionary) -> void:
+	rolled_talent = t
 	
 	# Display final awakened talent
 	var rank_str = rolled_talent.get("rank_str", "F")
@@ -92,7 +101,8 @@ func _finish_roll() -> void:
 	label_name.modulate = col
 	label_desc.text = desc
 	
-	btn_awaken.text = "THỨC TỈNH LẠI (TEST ROLL)"
+	btn_awaken.text = "ĐÃ THỨC TỈNH (chỉ Đan Reroll mới đổi được)"
+	btn_awaken.disabled = true
 	btn_start.disabled = false
 	btn_start.text = "BẮT ĐẦU SINH TỒN VỚI THIÊN PHÚ [" + rank_str + "]"
 
@@ -104,9 +114,12 @@ func _on_btn_start_pressed() -> void:
 	if char_name.is_empty():
 		char_name = "Kẻ Xuyên Không #" + str(randi() % 900 + 100)
 		
-	# Save new character
-	SaveSystem.create_new_character(char_name, rolled_talent)
-	GameState.init_new_game(rolled_talent, 1)
+	# Save new character (thiên phú lấy từ "server", không từ UI)
+	var talent := ServerSim.consume_pending_talent()
+	if talent.is_empty():
+		return
+	SaveSystem.create_new_character(char_name, talent)
+	GameState.load_from_character()
 	
 	# Load main game scene
 	get_tree().change_scene_to_file("res://src/world/Main.tscn")
@@ -115,9 +128,55 @@ func _on_btn_resume_pressed() -> void:
 	if not SaveSystem.has_active_character():
 		return
 		
-	var char_data = SaveSystem.character_data
-	var talent = char_data.get("talent", {})
-	var day = char_data.get("day", 1)
-	
-	GameState.init_new_game(talent, day)
+	GameState.load_from_character()
 	get_tree().change_scene_to_file("res://src/world/Main.tscn")
+
+# ==========================================
+# HỒ SƠ ACCOUNT (tách biệt khỏi nhân vật)
+# ==========================================
+var profile_panel: PanelContainer
+
+func _build_profile_button() -> void:
+	var btn := Button.new()
+	btn.text = "📜 HỒ SƠ TÀI KHOẢN"
+	btn.position = Vector2(20, 20)
+	btn.pressed.connect(_toggle_profile)
+	add_child(btn)
+
+func _toggle_profile() -> void:
+	if profile_panel and is_instance_valid(profile_panel):
+		profile_panel.queue_free()
+		profile_panel = null
+		return
+	var acc := SaveSystem.account_data
+	profile_panel = PanelContainer.new()
+	profile_panel.set_anchors_preset(Control.PRESET_CENTER)
+	profile_panel.custom_minimum_size = Vector2(640, 460)
+	profile_panel.position = Vector2(320, 120)
+	var vb := VBoxContainer.new()
+	profile_panel.add_child(vb)
+	var head := Label.new()
+	head.text = "HỒ SƠ TÀI KHOẢN %s  (vĩnh viễn — không mất khi nhân vật chết)" % acc.get("account_id", "")
+	head.add_theme_font_size_override("font_size", 16)
+	vb.add_child(head)
+	var info := Label.new()
+	info.text = "Kỷ lục ngày sống sót: %d  •  Điểm mùa: %d SP  •  Số lần chơi: %d  •  Tổng quái hạ: %d\nDanh hiệu: %s\nCosmetic: %s" % [
+		acc.get("highest_day_record", 0), acc.get("season_sp", 0), acc.get("total_games_played", 0),
+		acc.get("total_monsters_killed", 0), ", ".join(acc.get("titles", [])),
+		"(chưa mở khóa)" if acc.get("cosmetics", []).is_empty() else ", ".join(acc.get("cosmetics", []))]
+	vb.add_child(info)
+	var hist := ItemList.new()
+	hist.custom_minimum_size = Vector2(600, 300)
+	var logs: Array = acc.get("history_logs", [])
+	if logs.is_empty():
+		hist.add_item("Chưa có lần chơi nào kết thúc.")
+	for l in logs:
+		hist.add_item("%s  |  %s  |  %d ngày  |  %d SP  |  [%s] %s%s" % [
+			l.get("date", ""), l.get("char_name", ""), l.get("day_survived", 0), l.get("sp_earned", 0),
+			l.get("talent_rank", "F"), l.get("talent_name", ""), "  ★KỶ LỤC" if l.get("record", false) else ""])
+	vb.add_child(hist)
+	var close := Button.new()
+	close.text = "Đóng"
+	close.pressed.connect(_toggle_profile)
+	vb.add_child(close)
+	add_child(profile_panel)

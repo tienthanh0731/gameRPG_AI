@@ -1,150 +1,322 @@
 extends Node
+## GameState — trạng thái phiên chơi của nhân vật hiện tại + các công thức gameplay.
+## Logic thuần (không UI). UI chỉ nghe EventBus.
 
-# Active gameplay state
+const BASE_MAX_HEALTH: float = 100.0
+const BASE_MOVE_SPEED: float = 160.0
+const BASE_SPRINT_SPEED: float = 230.0
+
+const DIRECTIONS: Array[String] = ["Bắc", "Đông", "Nam", "Tây"]
+const DIRECTION_VECTORS: Array[Vector2] = [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]
+
+# Trạng thái phiên chơi
 var current_day: int = 1
+var time_hours: float = 7.0
 var today_sp: int = 0
-var total_season_sp: int = 0
-var monsters_killed_today: int = 0
+var character_total_sp: int = 0
+var kills_today: int = 0
 var active_talent: Dictionary = {}
 var is_in_dungeon: bool = false
-var has_cleared_dungeon_today: bool = false
+var is_dead: bool = false
 
-# References
-var player_ref: CharacterBody2D = null
+## Phó bản đang vào (dict từ danh sách dungeons hôm nay)
+var active_dungeon: Dictionary = {}
+
+## Thống kê thú triều đêm nay (cho điểm đóng góp phòng thủ 0-40)
+var raid_kills_tonight: int = 0
+var raid_size_tonight: int = 0
 
 func _ready() -> void:
-	# Connect to EventBus
-	EventBus.sp_added.connect(_on_sp_added)
 	EventBus.enemy_killed.connect(_on_enemy_killed)
-	EventBus.dungeon_cleared.connect(_on_dungeon_cleared)
-	EventBus.raid_wave_cleared.connect(_on_raid_cleared)
 
-func init_new_game(talent: Dictionary, day: int = 1) -> void:
-	active_talent = talent
-	current_day = day
-	today_sp = 0
-	monsters_killed_today = 0
-	has_cleared_dungeon_today = false
+# ==========================================
+# NẠP / LƯU NHÂN VẬT
+# ==========================================
+func load_from_character() -> void:
+	var c := SaveSystem.character_data
+	active_talent = c.get("talent", {})
+	current_day = int(c.get("day", 1))
+	time_hours = float(c.get("time_hours", 7.0))
+	today_sp = int(c.get("today_sp", 0))
+	character_total_sp = int(c.get("total_sp", 0))
+	kills_today = int(c.get("kills_today", 0))
 	is_in_dungeon = false
+	is_dead = false
+	active_dungeon = {}
+	raid_kills_tonight = 0
+	raid_size_tonight = 0
+	EventBus.score_updated.emit(today_sp, character_total_sp)
+
+## Giữ tương thích với code cũ.
+func init_new_game(talent: Dictionary, day: int = 1) -> void:
+	load_from_character()
+	if not talent.is_empty():
+		active_talent = talent
+	current_day = day
+
+func autosave() -> void:
+	if is_dead or not SaveSystem.has_active_character():
+		return
+	var c := SaveSystem.character_data
+	c["day"] = current_day
+	c["time_hours"] = time_hours
+	c["today_sp"] = today_sp
+	c["total_sp"] = character_total_sp
+	c["kills_today"] = kills_today
+	c["talent"] = active_talent
+	SaveSystem.save_character(c)
+
+## Ghi máu/đói/thể lực/túi đồ của Player vào dữ liệu nhân vật.
+func capture_player(player: Node) -> void:
+	if is_dead or not player or not SaveSystem.has_active_character():
+		return
+	var c := SaveSystem.character_data
+	var stats := player.get_node_or_null("SurvivalStats")
+	if stats:
+		c["health"] = stats.current_health
+		c["hunger"] = stats.hunger
+		c["stamina"] = stats.current_stamina
+	var inv := player.get_node_or_null("Inventory")
+	if inv and inv.has_method("to_dict"):
+		c["inventory"] = inv.to_dict()
+
+## Áp thiên phú + khôi phục chỉ số/túi đồ đã lưu lên Player.
+func apply_player(player: Node) -> void:
+	if not player:
+		return
+	var c := SaveSystem.character_data
+	apply_talent_stats(player, false)
+	var stats := player.get_node_or_null("SurvivalStats")
+	if stats:
+		var hp := float(c.get("health", -1.0))
+		stats.current_health = stats.max_health if hp <= 0.0 else minf(hp, stats.max_health)
+		stats.hunger = float(c.get("hunger", 100.0))
+		stats.current_stamina = minf(float(c.get("stamina", stats.max_stamina)), stats.max_stamina)
+		stats.health_changed.emit(stats.current_health, stats.max_health)
+		stats.stamina_changed.emit(stats.current_stamina, stats.max_stamina)
+	var inv := player.get_node_or_null("Inventory")
+	if inv and inv.has_method("from_dict"):
+		inv.from_dict(c.get("inventory", {}))
+
+func apply_talent_stats(player: Node, refill: bool) -> void:
+	var t := active_talent
+	var stats := player.get_node_or_null("SurvivalStats")
+	if stats:
+		var ratio: float = stats.current_health / maxf(1.0, stats.max_health)
+		stats.max_health = BASE_MAX_HEALTH * float(t.get("hp_mult", 1.0))
+		stats.current_health = stats.max_health if refill else stats.max_health * ratio
+		stats.regen_per_sec = float(t.get("regen", 0.0))
+		stats.damage_reduction = float(t.get("dmg_reduction", 0.0))
+		stats.health_changed.emit(stats.current_health, stats.max_health)
+	var spd := float(t.get("speed_mult", 1.0))
+	player.set("move_speed", BASE_MOVE_SPEED * spd)
+	player.set("sprint_speed", BASE_SPRINT_SPEED * spd)
+
+func get_player_damage_mult() -> float:
+	return float(active_talent.get("dmg_mult", 1.0))
+
+func get_gather_mult() -> float:
+	return float(active_talent.get("gather_mult", 1.0))
 
 # ==========================================
 # CÔNG THỨC SCALING ĐỘ KHÓ THEO NGÀY (SPEC §5)
 # ==========================================
-# Hệ số sức mạnh quái: M(d) = 1 + 0.15·√d + 0.01·d
+## M(d) = 1 + 0.15·√d + 0.01·d
 func get_monster_power_mult(d: int = -1) -> float:
 	if d <= 0:
 		d = current_day
 	return 1.0 + 0.15 * sqrt(float(d)) + 0.01 * float(d)
 
-# Quy mô thú triều: W(d) = min(8 + floor(d/3), 40)
+## W(d) = min(8 + floor(d/3), 40)
 func get_raid_wave_size(d: int = -1) -> int:
 	if d <= 0:
 		d = current_day
 	return int(min(8 + floor(float(d) / 3.0), 40))
 
-# Số phó bản / ngày: N(d) = min(3 + floor(d/5), 10)
+## N(d) = min(3 + floor(d/5), 10)
 func get_dungeon_count(d: int = -1) -> int:
 	if d <= 0:
 		d = current_day
 	return int(min(3 + floor(float(d) / 5.0), 10))
 
-# Mốc độ khó (Milestone phase)
+## Ngày 1-5 "chưa có thú triều thật": chỉ có đợt trinh sát nhỏ (1/3 W(d)).
+func is_real_tide(d: int = -1) -> bool:
+	if d <= 0:
+		d = current_day
+	return d > 5
+
+func get_tonight_wave_size(d: int = -1) -> int:
+	if d <= 0:
+		d = current_day
+	var w := get_raid_wave_size(d)
+	return w if is_real_tide(d) else maxi(2, w / 3)
+
+## Tỉ lệ quái tinh anh trong thú triều (từ ngày 16).
+func get_elite_chance(d: int = -1) -> float:
+	if d <= 0:
+		d = current_day
+	if d < 16:
+		return 0.0
+	return minf(0.1 + 0.01 * float(d - 16), 0.35)
+
+## Hướng tấn công + loại quái chủ lực đêm nay (ngẫu nhiên nhưng cố định trong ngày,
+## nên cảnh báo hoàng hôn khớp với đợt tấn công thật).
+func get_tonight_preview(d: int = -1) -> Dictionary:
+	if d <= 0:
+		d = current_day
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%s|tide|%d" % [SaveSystem.character_data.get("char_id", ""), d])
+	var dir_count := 1 if d <= 10 else (2 if d <= 25 else 3)
+	var pool: Array[int] = [0, 1, 2, 3]
+	var dirs: Array[int] = []
+	for i in dir_count:
+		var idx := rng.randi() % pool.size()
+		dirs.append(pool[idx])
+		pool.remove_at(idx)
+	var names: Array[String] = []
+	for di in dirs:
+		names.append(DIRECTIONS[di])
+	return {
+		"count": get_tonight_wave_size(d),
+		"directions": dirs,
+		"direction_names": names,
+		"monster_type": "Heo Rừng Cuồng Nộ" if d < 16 else "Heo Rừng + Cổ Thú Tinh Anh",
+		"is_real": is_real_tide(d),
+		"elite_chance": get_elite_chance(d),
+	}
+
+## Số giờ game còn lại tới khi thú triều bắt đầu (19:30).
+func hours_until_tide() -> float:
+	var h := 19.5 - time_hours
+	if h < 0.0:
+		h += 24.0
+	return h
+
 func get_difficulty_phase_name(d: int = -1) -> String:
 	if d <= 0:
 		d = current_day
 	if d <= 5:
 		return "Tân Thủ (Làm quen)"
 	elif d <= 15:
-		return "Ổn Định (Thú triều tiêu chuẩn)"
+		return "Ổn Định"
 	elif d <= 30:
-		return "Thử Thách (Dã thú tinh anh)"
-	else:
-		return "Ác Mộng (Thú Vương & Cực Hạn)"
+		return "Thử Thách (Quái tinh anh)"
+	return "Ác Mộng (Boss chu kỳ)"
 
 # ==========================================
-# ĐIỂM SINH TỒN (SP) & TỔNG KẾT
+# PHÓ BẢN NGẪU NHIÊN MỖI NGÀY
+# ==========================================
+## Sinh N(d) cửa phó bản quanh căn cứ. Vị trí/layout/độ khó đổi mỗi ngày,
+## được lưu vào nhân vật để thoát/vào lại không bị roll lại.
+func get_today_dungeons(base_pos: Vector2) -> Array:
+	var c := SaveSystem.character_data
+	var data: Dictionary = c.get("dungeons", {})
+	if int(data.get("day", 0)) == current_day and data.has("list"):
+		return data["list"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%s|dungeon|%d" % [c.get("char_id", ""), current_day])
+	var list: Array = []
+	var n := get_dungeon_count()
+	for i in n:
+		var ang := rng.randf() * TAU
+		var dist := rng.randf_range(420.0, 1500.0)
+		var pos := base_pos + Vector2(cos(ang), sin(ang)) * dist
+		var stars := clampi(1 + int(dist / 450.0) + int(current_day / 10), 1, 5)
+		list.append({
+			"id": "D%d_%d" % [current_day, i],
+			"x": pos.x, "y": pos.y,
+			"seed": rng.randi(),
+			"stars": stars,
+			"cleared": false,
+		})
+	c["dungeons"] = { "day": current_day, "list": list }
+	return list
+
+func mark_dungeon_cleared(dungeon_id: String) -> bool:
+	var data: Dictionary = SaveSystem.character_data.get("dungeons", {})
+	for d in data.get("list", []):
+		if d.get("id") == dungeon_id and not d.get("cleared", false):
+			d["cleared"] = true
+			add_sp(30, "Hoàn thành phó bản")
+			return true
+	return false
+
+# ==========================================
+# ĐIỂM SINH TỒN (SP) — chỉ tính ở đây ("server"), không nhận từ UI
 # ==========================================
 func add_sp(amount: int, reason: String = "") -> void:
+	if amount <= 0 or is_dead:
+		return
 	today_sp += amount
-	total_season_sp += amount
+	character_total_sp += amount
 	EventBus.sp_added.emit(amount, reason)
-	EventBus.score_updated.emit(today_sp, total_season_sp)
-
-func _on_sp_added(amount: int, _reason: String) -> void:
-	pass
+	EventBus.score_updated.emit(today_sp, character_total_sp)
 
 func _on_enemy_killed(_type: String, is_elite: bool, _pos: Vector2) -> void:
-	monsters_killed_today += 1
+	if is_dead:
+		return
+	kills_today += 1
+	var c := SaveSystem.character_data
+	c["monsters_killed"] = int(c.get("monsters_killed", 0)) + 1
 	if is_elite:
+		c["elites_killed"] = int(c.get("elites_killed", 0)) + 1
 		add_sp(10, "Hạ quái tinh anh")
 	else:
-		add_sp(1, "Hạ dã thú thường")
+		add_sp(1, "Hạ quái thường")
 
-func _on_dungeon_cleared(_name: String, _reward: Dictionary) -> void:
-	has_cleared_dungeon_today = true
-	add_sp(30, "Chinh phục phó bản")
+func begin_raid(size: int) -> void:
+	raid_kills_tonight = 0
+	raid_size_tonight = size
 
-func _on_raid_cleared(_day: int) -> void:
-	add_sp(50, "Sống sót qua đêm thú triều")
+func register_raid_kill() -> void:
+	raid_kills_tonight += 1
 
-# Tổng kết cuối ngày (Ngay sau khi kết thúc đêm - 06:00 sáng)
+## Gọi lúc rạng đông: sống sót qua đêm +50, đóng góp phòng thủ 0-40.
+func finish_raid() -> void:
+	add_sp(50, "Sống sót qua đêm")
+	if raid_size_tonight > 0:
+		var share := clampf(float(raid_kills_tonight) / float(raid_size_tonight), 0.0, 1.0)
+		add_sp(int(round(40.0 * share)), "Đóng góp phòng thủ thú triều")
+	EventBus.raid_wave_cleared.emit(current_day)
+
+## Tổng kết cuối ngày (ngay sau khi đêm kết thúc). Xếp hạng qua ServerSim,
+## ghi SP vào điểm mùa của Account, sang ngày mới và autosave.
 func evaluate_day_end() -> Dictionary:
-	var rank_tier = "SP = 0"
-	var chest_reward = {
-		"tier": "NONE",
-		"items": []
-	}
-	
-	if today_sp >= 120:
-		rank_tier = "Top 1% (Huyền Thoại)"
-		chest_reward["tier"] = "LEGENDARY"
-		chest_reward["items"] = [
-			{ "name": "Đan Reroll Thiên Phú", "amount": 1 },
-			{ "name": "Quặng Sắt", "amount": 15 },
-			{ "name": "Đá", "amount": 25 },
-			{ "name": "Gỗ", "amount": 40 },
-			{ "name": "Thịt Rừng", "amount": 10 }
-		]
-	elif today_sp >= 75:
-		rank_tier = "Top 10% (Hiếm)"
-		chest_reward["tier"] = "RARE"
-		chest_reward["items"] = [
-			{ "name": "Quặng Sắt", "amount": 8 },
-			{ "name": "Đá", "amount": 15 },
-			{ "name": "Gỗ", "amount": 25 },
-			{ "name": "Thịt Rừng", "amount": 5 }
-		]
-	elif today_sp >= 40:
-		rank_tier = "Top 50% (Thường)"
-		chest_reward["tier"] = "NORMAL"
-		chest_reward["items"] = [
-			{ "name": "Đá", "amount": 10 },
-			{ "name": "Gỗ", "amount": 15 },
-			{ "name": "Thịt Rừng", "amount": 3 }
-		]
-	elif today_sp > 0:
-		rank_tier = "Tham Gia Tích Cực"
-		chest_reward["tier"] = "PARTICIPATION"
-		chest_reward["items"] = [
-			{ "name": "Gỗ", "amount": 8 },
-			{ "name": "Đá", "amount": 5 }
-		]
-		
-	var summary = {
+	var ranking := ServerSim.rank_day(current_day, today_sp)
+	var chest: Dictionary = ranking.chest
+	if chest.has("title"):
+		SaveSystem.add_title(chest.title)
+	SaveSystem.commit_day_to_account(today_sp, kills_today)
+
+	var summary := {
 		"day": current_day,
 		"today_sp": today_sp,
-		"rank_tier": rank_tier,
-		"chest": chest_reward,
-		"monsters_killed": monsters_killed_today
+		"rank": ranking.rank,
+		"total_players": ranking.total,
+		"percentile": ranking.percentile,
+		"rank_tier": ranking.tier_label,
+		"chest": chest,
+		"monsters_killed": kills_today,
 	}
-	
-	# Emit event
-	EventBus.day_ended.emit(current_day, today_sp, rank_tier, chest_reward)
-	
-	# Reset daily counter & advance day
+	EventBus.day_ended.emit(current_day, today_sp, ranking.tier_label, chest)
+
 	current_day += 1
 	today_sp = 0
-	monsters_killed_today = 0
-	has_cleared_dungeon_today = false
-	
+	kills_today = 0
+	autosave()
+	EventBus.day_started.emit(current_day)
+	EventBus.score_updated.emit(today_sp, character_total_sp)
 	return summary
+
+# ==========================================
+# PERMADEATH
+# ==========================================
+## Xử lý chết đúng 1 lần (SurvivalStats có thể bắn tín hiệu nhiều lần khi HP=0).
+func handle_player_death() -> Dictionary:
+	if is_dead:
+		return SaveSystem.last_death_summary
+	is_dead = true
+	var result := SaveSystem.kill_character_atomic(current_day, character_total_sp, active_talent)
+	EventBus.player_died.emit(current_day, character_total_sp, result.get("record_broken", false))
+	active_talent = {}
+	return result

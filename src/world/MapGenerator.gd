@@ -87,6 +87,9 @@ func _init_textures() -> void:
 			tex_bushes.append(load(bush_path))
 
 func _init_noises() -> void:
+	if map_seed == 0 and SaveSystem.has_active_character():
+		# Bản đồ cố định theo nhân vật: ra/vào phó bản không sinh lại thế giới
+		map_seed = int(SaveSystem.character_data.get("world_seed", 0))
 	if map_seed == 0:
 		randomize()
 		map_seed = randi()
@@ -125,7 +128,7 @@ func generate_world() -> void:
 					valid_spawn_points.append(world_p)
 
 	if valid_spawn_points.size() > 0:
-		spawn_location = valid_spawn_points[randi() % valid_spawn_points.size()]
+		spawn_location = valid_spawn_points[absi(map_seed) % valid_spawn_points.size()]
 	else:
 		spawn_location = Vector2.ZERO
 

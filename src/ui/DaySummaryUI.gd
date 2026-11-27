@@ -29,7 +29,11 @@ func setup(summary_data: Dictionary) -> void:
 		sp, summary_data.get("monsters_killed", 0)
 	]
 	
-	label_tier.text = "XẾP HẠNG TOÀN SERVER: [%s]" % rank_tier
+	label_tier.text = "XẾP HẠNG SERVER: #%d / %d người (top %.1f%%) → [%s]" % [
+		summary_data.get("rank", 0), summary_data.get("total_players", 0),
+		summary_data.get("percentile", 100.0), rank_tier]
+	if chest.has("title"):
+		label_tier.text += "\nDanh hiệu mới: %s" % chest.title
 	if "Top 1%" in rank_tier:
 		label_tier.modulate = Color(1.0, 0.85, 0.2)
 	elif "Top 10%" in rank_tier:
@@ -56,6 +60,10 @@ func _on_btn_continue_pressed() -> void:
 			for item in cached_rewards:
 				inv.add_resource(item.get("name", ""), item.get("amount", 1))
 				
+	cached_rewards = []
+	if GameState:
+		GameState.capture_player(player)
+		GameState.autosave()
 	visible = false
 	get_tree().paused = false
 	summary_closed.emit()

@@ -20,6 +20,7 @@ config/icon="res://assets/ui_icons/rpg_icons_32x32/sword_01a.png"
 
 EventBus="*res://src/core/EventBus.gd"
 SaveSystem="*res://src/core/SaveSystem.gd"
+ServerSim="*res://src/core/ServerSim.gd"
 GameState="*res://src/core/GameState.gd"
 
 [display]

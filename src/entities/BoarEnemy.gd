@@ -15,6 +15,10 @@ var current_health: int = 35
 @export var move_speed: float = 110.0
 @export var attack_damage: int = 12
 @export var is_elite: bool = false
+## Chế độ thú triều: ưu tiên đánh công trình căn cứ, chỉ đuổi người chơi khi ở gần.
+var raid_mode: bool = false
+var raid_target_pos: Vector2 = Vector2.ZERO
+const PLAYER_AGGRO_RANGE: float = 260.0
 
 var state: BoarState = BoarState.IDLE
 var target_entity: Node2D = null
@@ -31,6 +35,7 @@ var anim_timer: float = 0.0
 var current_frame: int = 0
 var anim_fps: float = 8.0
 var state_timer: float = 0.0
+var retarget_timer: float = 0.0
 
 func _ready() -> void:
 	var mult = 1.0
@@ -90,11 +95,32 @@ func _physics_process(delta: float) -> void:
 
 func _find_target() -> void:
 	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		target_entity = players[0]
+	var player: Node2D = players[0] if players.size() > 0 else null
+	if not raid_mode:
+		target_entity = player
+		return
+	if player and global_position.distance_to(player.global_position) <= PLAYER_AGGRO_RANGE:
+		target_entity = player
+		return
+	# Tìm công trình gần nhất trên đường tới căn cứ
+	var best: Node2D = null
+	var best_d := INF
+	for s in get_tree().get_nodes_in_group("structure"):
+		if s is Node2D and is_instance_valid(s):
+			var d = global_position.distance_to(s.global_position)
+			if d < best_d:
+				best_d = d
+				best = s
+	target_entity = best if best else player
 
 func _chase_target(_delta: float) -> void:
-	if not target_entity:
+	if raid_mode:
+		retarget_timer -= _delta
+		if retarget_timer <= 0.0:
+			retarget_timer = 0.5
+			_find_target()
+	if not target_entity or not is_instance_valid(target_entity):
+		target_entity = null
 		_find_target()
 		return
 		
@@ -127,6 +153,8 @@ func take_hit(tool_id: int = 2) -> void:
 		
 	_ensure_textures()
 	var dmg = 15 if tool_id == 2 else 5
+	if GameState:
+		dmg = int(round(dmg * GameState.get_player_damage_mult()))
 	current_health -= dmg
 	_play_flash()
 	

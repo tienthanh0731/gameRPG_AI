@@ -12,13 +12,17 @@ var dusk_color: Color = Color(0.9, 0.55, 0.35, 1.0)
 var night_color: Color = Color(0.08, 0.08, 0.18, 1.0)
 var dawn_color: Color = Color(0.85, 0.7, 0.5, 1.0)
 
-var current_phase: String = "Day"
+var current_phase: String = ""
+
+func _ready() -> void:
+	current_time_hours = GameState.time_hours
 
 func _process(delta: float) -> void:
 	var hours_per_second = 24.0 / day_duration_seconds
 	current_time_hours += hours_per_second * delta
 	if current_time_hours >= 24.0:
 		current_time_hours -= 24.0
+	GameState.time_hours = current_time_hours
 		
 	var hour_int = int(current_time_hours)
 	var minute_int = int((current_time_hours - hour_int) * 60)

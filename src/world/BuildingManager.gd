@@ -168,9 +168,50 @@ func _try_place_structure() -> void:
 			struct_instance = SpikeScene.instantiate()
 			
 	if struct_instance:
-		struct_instance.global_position = grid_pos
-		get_parent().add_child(struct_instance)
+		for existing in get_tree().get_nodes_in_group("structure"):
+			if existing is Node2D and existing.global_position.distance_to(grid_pos) < 8.0:
+				struct_instance.free()
+				_spawn_hint("Ô này đã có công trình!", Color(1.0, 0.4, 0.4))
+				return
+		_add_structure(struct_instance, int(current_build), grid_pos, -1)
+		EventBus.structure_placed.emit(int(current_build), grid_pos)
 		_spawn_hint("XÂY DỰNG THÀNH CÔNG!", Color(0.4, 1.0, 0.4))
+
+# ==========================================
+# LƯU / KHÔI PHỤC CĂN CỨ (thuộc tầng Character, mất khi chết)
+# ==========================================
+func _add_structure(inst: Node2D, build_type: int, pos: Vector2, hp: int) -> void:
+	inst.global_position = pos
+	inst.set_meta("build_type", build_type)
+	get_parent().add_child(inst)
+	if hp > 0 and "current_health" in inst:
+		inst.current_health = hp
+	if inst.has_signal("structure_destroyed"):
+		inst.structure_destroyed.connect(func(): EventBus.structure_destroyed.emit(pos))
+
+func _scene_for(build_type: int) -> PackedScene:
+	match build_type:
+		BuildType.DOOR: return DoorScene
+		BuildType.SPIKE: return SpikeScene
+	return WallScene
+
+func serialize_structures() -> Array:
+	var out: Array = []
+	for st in get_tree().get_nodes_in_group("structure"):
+		if st is Node2D and is_instance_valid(st) and not st.is_queued_for_deletion() and st.has_meta("build_type"):
+			if "current_health" in st and st.current_health <= 0:
+				continue
+			out.append({
+				"type": int(st.get_meta("build_type")),
+				"x": st.global_position.x, "y": st.global_position.y,
+				"hp": int(st.current_health) if "current_health" in st else -1,
+			})
+	return out
+
+func restore_structures(list: Array) -> void:
+	for d in list:
+		var t := int(d.get("type", BuildType.WALL))
+		_add_structure(_scene_for(t).instantiate(), t, Vector2(float(d.get("x", 0)), float(d.get("y", 0))), int(d.get("hp", -1)))
 
 func _try_interact_door() -> void:
 	if not player:

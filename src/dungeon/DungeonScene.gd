@@ -1,8 +1,13 @@
 extends Node2D
+## DungeonScene — phó bản "Tàn Tích Cổ Sơn Động".
+## Layout (số quái, vị trí, chướng ngại) sinh từ seed của phó bản hôm nay,
+## nên mỗi cửa/mỗi ngày khác nhau nhưng vào lại thì giữ nguyên.
 
 const BoarScene = preload("res://src/entities/BoarEnemy.tscn")
 const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
-const PlayerScene = preload("res://src/core/Player.tscn")
+const PermadeathScene = preload("res://src/ui/PermadeathUI.tscn")
+
+const ARENA_HALF := Vector2(480, 380)
 
 @onready var player: CharacterBody2D = $Player
 @onready var exit_portal: Area2D = $ExitPortal
@@ -15,86 +20,95 @@ const PlayerScene = preload("res://src/core/Player.tscn")
 var boss_instance: CharacterBody2D = null
 var is_dungeon_cleared: bool = false
 var can_exit: bool = false
+var rng := RandomNumberGenerator.new()
+var dungeon: Dictionary = {}
 
 func _ready() -> void:
+	if not SaveSystem.has_active_character():
+		get_tree().change_scene_to_file.call_deferred("res://src/ui/CharacterCreationUI.tscn")
+		return
+	dungeon = GameState.active_dungeon
+	rng.seed = int(dungeon.get("seed", 12345))
+
 	exit_label.visible = false
 	victory_banner.visible = false
 	boss_hud.visible = true
-	
 	exit_portal.body_entered.connect(_on_exit_portal_entered)
 	exit_portal.body_exited.connect(_on_exit_portal_exited)
-	
-	# Setup Player in Dungeon
+
 	if player:
+		GameState.apply_player(player)
 		var stats = player.get_node_or_null("SurvivalStats")
 		if stats:
 			stats.player_died.connect(_on_player_died)
-			# Apply active talent buffs if any
-			if not GameState.active_talent.is_empty():
-				stats.max_health *= GameState.active_talent.get("hp_mult", 1.0)
-				stats.current_health = stats.max_health
-				
-		var inv = player.get_node_or_null("Inventory")
-		if inv and SaveSystem.character_data.has("inventory"):
-			var saved_inv = SaveSystem.character_data["inventory"]
-			inv.wood = saved_inv.get("wood", 0)
-			inv.stone = saved_inv.get("stone", 0)
-			inv.iron = saved_inv.get("iron", 0)
-			inv.meat = saved_inv.get("meat", 0)
-			inv.bone = saved_inv.get("bone", 0)
 
+	_build_layout()
 	_spawn_dungeon_enemies()
 
+func _stars() -> int:
+	return int(dungeon.get("stars", 1))
+
+## Chướng ngại đá ngẫu nhiên theo seed.
+func _build_layout() -> void:
+	var rock_tex: Texture2D = load("res://assets/ui_icons/rpg_icons_32x32/stoneblock_01a.png")
+	var count := rng.randi_range(4, 9)
+	for i in count:
+		var pos := Vector2(rng.randf_range(-ARENA_HALF.x + 60, ARENA_HALF.x - 60), rng.randf_range(-ARENA_HALF.y + 60, 40))
+		if pos.distance_to(Vector2(0, 120)) < 120.0 or pos.distance_to(Vector2(0, -180)) < 90.0:
+			continue
+		var body := StaticBody2D.new()
+		body.position = pos
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(44, 44)
+		shape.shape = rect
+		body.add_child(shape)
+		var spr := Sprite2D.new()
+		spr.texture = rock_tex
+		spr.scale = Vector2(1.5, 1.5)
+		spr.modulate = Color(0.6, 0.55, 0.5)
+		body.add_child(spr)
+		add_child(body)
+
 func _spawn_dungeon_enemies() -> void:
-	# 1. Spawn Alpha Elite Boar (Boss)
+	# Boss: Cổ Thú Thống Lĩnh (quái tinh anh), mạnh hơn theo số sao
 	boss_instance = BoarScene.instantiate()
 	boss_instance.is_elite = true
-	boss_instance.position = Vector2(0, -180)
+	boss_instance.position = Vector2(rng.randf_range(-200, 200), -200)
+	boss_instance.max_health = int(boss_instance.max_health * (1.0 + 0.25 * (_stars() - 1)))
 	add_child(boss_instance)
-	
 	boss_hp_bar.max_value = boss_instance.max_health
 	boss_hp_bar.value = boss_instance.current_health
-	boss_name_label.text = "✦ [QUÁI TINH ANH] CỔ THÚ THỐNG LĨNH (MÁU: %d) ✦" % boss_instance.max_health
-	
-	# Connect death
-	boss_instance.tree_exited.connect(_on_boss_killed)
-	
-	# 2. Spawn 3 Minion Boars
-	var offsets = [Vector2(-120, -100), Vector2(120, -100), Vector2(0, -280)]
-	for off in offsets:
-		var minion = BoarScene.instantiate()
-		minion.position = off
-		add_child(minion)
+	boss_instance.boar_died.connect(func(_p): _on_boss_killed())
+
+	var minions := 2 + _stars() + rng.randi_range(0, 2)
+	for i in minions:
+		var m = BoarScene.instantiate()
+		m.position = Vector2(rng.randf_range(-ARENA_HALF.x + 80, ARENA_HALF.x - 80), rng.randf_range(-ARENA_HALF.y + 60, -40))
+		add_child(m)
 
 func _process(_delta: float) -> void:
-	if is_instance_valid(boss_instance):
+	if is_instance_valid(boss_instance) and not is_dungeon_cleared:
 		boss_hp_bar.value = boss_instance.current_health
-		boss_name_label.text = "✦ [QUÁI TINH ANH] CỔ THÚ THỐNG LĨNH (MÁU: %d / %d) ✦" % [
-			boss_instance.current_health, boss_instance.max_health
-		]
-	elif not is_dungeon_cleared and boss_instance != null:
-		_on_boss_killed()
+		boss_name_label.text = "✦ [TINH ANH] CỔ THÚ THỐNG LĨNH %s (MÁU: %d / %d) ✦" % [
+			"★".repeat(_stars()), maxi(0, boss_instance.current_health), boss_instance.max_health]
 
 func _on_boss_killed() -> void:
-	if is_dungeon_cleared: return
+	if is_dungeon_cleared:
+		return
 	is_dungeon_cleared = true
 	boss_hud.visible = false
 	victory_banner.visible = true
-	
-	# Drop rare dungeon loot at center
-	_spawn_loot(Vector2(-30, -50), "Đan Reroll Thiên Phú", 1)
-	_spawn_loot(Vector2(0, -50), "Quặng Sắt", 15)
-	_spawn_loot(Vector2(30, -50), "Thịt Rừng", 10)
-	
-	# Award SP & Trigger Event
-	GameState.add_sp(30, "Chinh phục Tàn Tích Cổ Sơn Động")
-	EventBus.dungeon_cleared.emit("Tàn Tích Cổ Sơn Động", {
-		"sp": 30,
-		"reroll_pill": 1,
-		"iron": 15
-	})
-	
-	# Activate Exit Portal
+
+	# Loot: đan reroll hiếm (10% + 5%/sao)
+	_spawn_loot(Vector2(0, -50), "Quặng Sắt", 4 + 3 * _stars())
+	_spawn_loot(Vector2(30, -50), "Thịt Rừng", 2 + _stars())
+	if rng.randf() < 0.10 + 0.05 * _stars():
+		_spawn_loot(Vector2(-30, -50), "Đan Reroll Thiên Phú", 1)
+
+	# SP chỉ được cộng trong GameState (1 lần/phó bản)
+	GameState.mark_dungeon_cleared(str(dungeon.get("id", "")))
+	EventBus.dungeon_cleared.emit("Tàn Tích Cổ Sơn Động", { "sp": 30, "stars": _stars() })
 	exit_portal.modulate = Color(0.4, 1.2, 0.5)
 
 func _spawn_loot(pos: Vector2, item_name: String, amount: int) -> void:
@@ -105,17 +119,14 @@ func _spawn_loot(pos: Vector2, item_name: String, amount: int) -> void:
 		tex = load("res://assets/ui_icons/rpg_icons_32x32/potion_01a.png")
 	elif item_name == "Thịt Rừng":
 		tex = load("res://assets/map/Resources/Meat/Meat Resource/Meat Resource.png")
-	item.setup(item_name, amount, tex)
 	add_child(item)
+	item.setup(item_name, amount, tex)
 
 func _on_exit_portal_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		can_exit = true
 		exit_label.visible = true
-		if is_dungeon_cleared:
-			exit_label.text = "[E] BƯỚC QUA TRUYỀN TỐNG VỀ LẠI CĂN CỨ"
-		else:
-			exit_label.text = "[E] RÚT LUI KHỎI PHÓ BẢN"
+		exit_label.text = "[E] TRUYỀN TỐNG VỀ CĂN CỨ" if is_dungeon_cleared else "[E] RÚT LUI KHỎI PHÓ BẢN"
 
 func _on_exit_portal_exited(body: Node2D) -> void:
 	if body.is_in_group("player"):
@@ -123,35 +134,32 @@ func _on_exit_portal_exited(body: Node2D) -> void:
 		exit_label.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
-	if can_exit and event is InputEventKey and event.pressed and event.keycode == KEY_E:
+	if can_exit and not GameState.is_dead and event is InputEventKey and event.pressed and event.keycode == KEY_E:
 		_return_to_surface()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and player:
+		GameState.capture_player(player)
+		GameState.autosave()
+
 func _return_to_surface() -> void:
-	# Save updated player stats & inventory before exiting dungeon
 	if player:
-		var inv = player.get_node_or_null("Inventory")
-		var stats = player.get_node_or_null("SurvivalStats")
-		if inv and stats and SaveSystem.character_data:
-			SaveSystem.character_data["health"] = stats.current_health
-			SaveSystem.character_data["stamina"] = stats.current_stamina
-			SaveSystem.character_data["inventory"] = {
-				"wood": inv.wood,
-				"stone": inv.stone,
-				"iron": inv.iron,
-				"meat": inv.meat,
-				"bone": inv.bone
-			}
-			SaveSystem.save_character(SaveSystem.character_data)
-			
+		GameState.capture_player(player)
+	GameState.autosave()
 	GameState.is_in_dungeon = false
+	GameState.active_dungeon = {}
 	EventBus.dungeon_exited.emit()
-	get_tree().change_scene_to_file("res://src/world/Main.tscn")
+	get_tree().change_scene_to_file.call_deferred("res://src/world/Main.tscn")
 
 func _on_player_died() -> void:
-	# Trigger Permadeath
-	var talent = GameState.active_talent
-	var day = GameState.current_day
-	var sp = GameState.total_season_sp
-	var result = SaveSystem.kill_character_atomic(day, sp, talent)
-	EventBus.player_died.emit(day, sp, result.get("record_broken", false))
-	get_tree().change_scene_to_file("res://src/ui/CharacterCreationUI.tscn")
+	if GameState.is_dead:
+		return
+	var result := GameState.handle_player_death()
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	var ui = PermadeathScene.instantiate()
+	layer.add_child(ui)
+	ui.setup(result)
+	ui.visible = true
+	get_tree().paused = true

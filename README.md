@@ -25,3 +25,24 @@ Toàn bộ tài liệu thiết kế và đặc tả kỹ thuật chi tiết đư
    * **Hệ Thống Phẩm Cấp:** Phàm phẩm (Trắng) $\rightarrow$ Tinh xảo (Lục) $\rightarrow$ Trân quý (Lam) $\rightarrow$ Cực phẩm (Tím) $\rightarrow$ Huyền thoại (Cam) $\rightarrow$ Thần thoại (Đỏ).
    * **Kho Vũ Khí & Trang Bị:** Kiếm 1 tay + Khiên, Trọng kiếm 2 tay, Trường thương, Song đao, Cung thần, Nỏ cơ giới, Pháp trượng nguyên tố.
    * **Bộ Công Cụ & Đồ Tiêu Hao:** Rìu, cuốc, búa sửa chữa, cần câu cá, thịt nướng, băng gạc, đuốc, phù chú.
+
+---
+
+## 🧪 PHASE 1 (MVP singleplayer local) — cách chạy & test
+
+**Autoload:** `EventBus` (tín hiệu) → `SaveSystem` (JSON local, 2 tầng Account/Character) → `ServerSim` (vai trò "server authoritative" giả lập: roll thiên phú, reroll, xếp hạng %, BXH phân trang) → `GameState` (công thức + trạng thái phiên chơi). Phase 2 chỉ cần thay phần thân của `ServerSim`/`SaveSystem` bằng request mạng.
+
+**Phím:** WASD di chuyển · Space lướt · 1/2/3 Rìu/Cuốc/Kiếm · Chuột trái hành động · B xây dựng (4/5/6) · E vào phó bản/mở cổng · F ăn thịt · T dùng Đan Reroll · L bảng xếp hạng.
+
+**Test tự động (headless):**
+```
+godot.exe --headless --path . res://tests/test_phase1.tscn    # logic: M(d)/W(d)/N(d), tỉ lệ roll, xếp hạng, permadeath atomic, journal
+godot.exe --headless --path . res://tests/smoke_scenes.tscn   # luồng: Main → đêm → tổng kết → phó bản → chết
+```
+Test tự sao lưu/khôi phục save thật trong `user://`.
+
+**Quy ước đã chọn khi đặc tả chưa rõ:**
+- Ngày 1-5 "chưa có thú triều thật" → chỉ có *đợt trinh sát* = max(2, W(d)/3); từ ngày 6 dùng đủ W(d).
+- Top 1%/10%/50% trong bản singleplayer → xếp hạng với 199 người chơi giả lập (cố định theo account + ngày).
+- "d" trong M(d) = ngày sống sót của nhân vật. Đan Reroll: tối đa 1 lần / nhân vật.
+- Thiên phú được roll 1 lần và lưu ngay vào Account (`pending_talent`) → thoát game/bấm lại không đổi được.

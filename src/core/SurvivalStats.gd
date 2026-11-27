@@ -25,6 +25,9 @@ signal player_died()
 @export var target_temperature: float = 37.0
 
 var is_near_fire: bool = false
+var regen_per_sec: float = 0.0 # từ Thiên Phú
+var damage_reduction: float = 0.0 # từ Thiên Phú, chỉ áp cho đòn quái
+var is_dead: bool = false
 
 func _ready() -> void:
 	current_health = max_health
@@ -50,7 +53,10 @@ func _update_needs(delta: float) -> void:
 		take_damage(2.0 * delta)
 	elif current_health < max_health and hunger > 50.0 and thirst > 50.0 and body_temperature >= 35.0:
 		# Passive health recovery when well-fed and warm
-		current_health = min(max_health, current_health + 1.2 * delta)
+		current_health = min(max_health, current_health + (1.2 + regen_per_sec) * delta)
+		health_changed.emit(current_health, max_health)
+	elif regen_per_sec > 0.0 and current_health < max_health and not is_dead:
+		current_health = min(max_health, current_health + regen_per_sec * delta)
 		health_changed.emit(current_health, max_health)
 
 func _update_temperature(delta: float) -> void:
@@ -77,10 +83,22 @@ func use_stamina(amount: float) -> bool:
 	return false
 
 func take_damage(amount: float) -> void:
+	if is_dead:
+		return
 	current_health = max(0.0, current_health - amount)
 	health_changed.emit(current_health, max_health)
 	if current_health <= 0.0:
-		player_died.emit()
+		is_dead = true
+		player_died.emit() # chỉ bắn 1 lần
+
+## Sát thương từ quái: áp giảm sát thương của Thiên Phú.
+func take_monster_damage(amount: float) -> void:
+	take_damage(amount * (1.0 - clampf(damage_reduction, 0.0, 0.9)))
+
+func eat(hunger_amount: float, heal_amount: float) -> void:
+	hunger = min(100.0, hunger + hunger_amount)
+	heal(heal_amount)
+	hunger_changed.emit(hunger)
 
 func heal(amount: float) -> void:
 	current_health = min(max_health, current_health + amount)
