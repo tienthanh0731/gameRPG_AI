@@ -1,9 +1,11 @@
-class_name MapGenerator
 extends Node2D
 
 signal biome_changed(biome_name: String, ambient_temp: float)
 signal player_spawn_found(spawn_pos: Vector2)
 signal resource_dropped(item_name: String, amount: int, pos: Vector2)
+
+const TreePropScript = preload("res://src/world/TreeProp.gd")
+const RockPropScript = preload("res://src/world/RockProp.gd")
 
 enum BiomeType {
 	OCEAN,
@@ -34,6 +36,7 @@ var tex_stone: Texture2D
 var tex_snow: Texture2D
 
 var tex_trees: Array[Texture2D] = []
+var tex_stumps: Array[Texture2D] = []
 var tex_rocks: Array[Texture2D] = []
 var tex_bushes: Array[Texture2D] = []
 
@@ -59,6 +62,12 @@ func _init_textures() -> void:
 		var tree_path = "res://assets/raw_packs/Tiny Swords (Free Pack)/Tiny Swords (Free Pack)/Terrain/Resources/Wood/Trees/Tree%d.png" % i
 		if ResourceLoader.exists(tree_path):
 			tex_trees.append(load(tree_path))
+
+	# Load Stumps
+	for i in range(1, 5):
+		var stump_path = "res://assets/map/Resources/Wood/Trees/Stump %d.png" % i
+		if ResourceLoader.exists(stump_path):
+			tex_stumps.append(load(stump_path))
 
 	# Load Rocks
 	for i in range(1, 5):
@@ -123,8 +132,8 @@ func generate_world() -> void:
 			
 			_create_tile_sprite(world_pos, biome)
 			
-			# Leave a clear 160px radius around player spawn
-			if world_pos.distance_to(spawn_location) > 160.0:
+			# Leave a clear 220px radius around player spawn
+			if world_pos.distance_to(spawn_location) > 220.0:
 				_spawn_props_at(world_pos, biome, x, y)
 
 	player_spawn_found.emit(spawn_location)
@@ -182,9 +191,10 @@ func _spawn_props_at(pos: Vector2, biome: BiomeType, grid_x: int, grid_y: int) -
 
 	match biome:
 		BiomeType.FOREST:
-			# Spaced trees: only spawn on specific intervals or noise peaks
 			if (abs(grid_x) % 3 == 0 and abs(grid_y) % 3 == 0) and f_noise > -0.1 and tex_trees.size() > 0:
-				_create_tree_prop(pos, tex_trees[randi() % tex_trees.size()])
+				var t_idx = randi() % tex_trees.size()
+				var s_tex = tex_stumps[t_idx % tex_stumps.size()] if tex_stumps.size() > 0 else null
+				_create_tree_prop(pos, tex_trees[t_idx], s_tex)
 			elif (abs(grid_x) % 2 == 1 and abs(grid_y) % 2 == 1) and f_noise < -0.25 and tex_bushes.size() > 0:
 				_create_bush_prop(pos, tex_bushes[randi() % tex_bushes.size()])
 			elif (abs(grid_x) % 4 == 2 and abs(grid_y) % 4 == 2) and f_noise > 0.3 and tex_rocks.size() > 0:
@@ -196,24 +206,26 @@ func _spawn_props_at(pos: Vector2, biome: BiomeType, grid_x: int, grid_y: int) -
 
 		BiomeType.SNOW_TUNDRA:
 			if (abs(grid_x) % 3 == 1 and abs(grid_y) % 3 == 1) and f_noise > 0.0 and tex_trees.size() > 0:
-				var tree = _create_tree_prop(pos, tex_trees[randi() % tex_trees.size()])
-				tree.modulate = Color(0.75, 0.88, 1.0) # Snow tint
+				var t_idx = randi() % tex_trees.size()
+				var s_tex = tex_stumps[t_idx % tex_stumps.size()] if tex_stumps.size() > 0 else null
+				var tree = _create_tree_prop(pos, tex_trees[t_idx], s_tex)
+				tree.modulate = Color(0.75, 0.88, 1.0)
 
 		BiomeType.BEACH:
 			if (abs(grid_x) % 4 == 0 and abs(grid_y) % 4 == 0) and f_noise > 0.2 and tex_rocks.size() > 0:
 				_create_rock_prop(pos, tex_rocks[randi() % tex_rocks.size()], 0.6)
 
-func _create_tree_prop(pos: Vector2, tex: Texture2D) -> TreeProp:
-	var tree = TreeProp.new()
+func _create_tree_prop(pos: Vector2, tex: Texture2D, stump_tex: Texture2D = null) -> Node2D:
+	var tree = TreePropScript.new()
 	tree.position = pos
+	tree.stump_texture = stump_tex
 	
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite2D"
 	sprite.texture = tex
-	sprite.hframes = 8 # Sheet has 8 frames
+	sprite.hframes = 8
 	sprite.frame = 0
-	sprite.scale = Vector2(0.55, 0.55) # Natural proportion
-	# Set origin to tree base for 2.5D Y-sort
+	sprite.scale = Vector2(0.55, 0.55)
 	sprite.offset = Vector2(0, -96)
 	tree.add_child(sprite)
 
@@ -229,8 +241,8 @@ func _create_tree_prop(pos: Vector2, tex: Texture2D) -> TreeProp:
 	props_layer.add_child(tree)
 	return tree
 
-func _create_rock_prop(pos: Vector2, tex: Texture2D, scale_val: float = 0.85) -> RockProp:
-	var rock = RockProp.new()
+func _create_rock_prop(pos: Vector2, tex: Texture2D, scale_val: float = 0.85) -> Node2D:
+	var rock = RockPropScript.new()
 	rock.position = pos
 
 	var sprite = Sprite2D.new()

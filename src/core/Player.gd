@@ -1,5 +1,6 @@
-class_name Player
 extends CharacterBody2D
+
+signal tool_changed(tool_mode: int)
 
 enum ToolMode {
 	AXE,       # Phím 1: Đốn Củi
@@ -16,11 +17,12 @@ enum PlayerState {
 	ACTION_ATTACK
 }
 
-@export var move_speed: float = 150.0
-@export var sprint_speed: float = 220.0
-@export var dodge_speed: float = 360.0
+@export var move_speed: float = 160.0
+@export var sprint_speed: float = 230.0
+@export var dodge_speed: float = 380.0
 
-@onready var survival_stats: SurvivalStats = $SurvivalStats
+@onready var survival_stats: Node = $SurvivalStats
+@onready var inventory: Node = $Inventory
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var interaction_area: Area2D = $InteractionArea
 
@@ -52,15 +54,21 @@ func _ready() -> void:
 	tex_mining = load("res://assets/characters/survivor_male/PlayerMining-Sheet.png")
 	tex_attack = load("res://assets/characters/survivor_male/PlayerAttack_1-Sheet.png")
 	_set_anim(tex_idle, 3, 6.0)
+	tool_changed.emit(current_tool)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_trigger_action()
+	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_1:
 			current_tool = ToolMode.AXE
+			tool_changed.emit(current_tool)
 		elif event.keycode == KEY_2:
 			current_tool = ToolMode.PICKAXE
+			tool_changed.emit(current_tool)
 		elif event.keycode == KEY_3:
 			current_tool = ToolMode.SWORD
+			tool_changed.emit(current_tool)
 
 func _physics_process(delta: float) -> void:
 	match state:
@@ -76,18 +84,24 @@ func _physics_process(delta: float) -> void:
 
 func _handle_movement(delta: float) -> void:
 	var input_vec = Vector2.ZERO
-	input_vec.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
-	input_vec.y = Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT) or Input.is_action_pressed("move_left"):
+		input_vec.x -= 1.0
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT) or Input.is_action_pressed("move_right"):
+		input_vec.x += 1.0
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP) or Input.is_action_pressed("move_up"):
+		input_vec.y -= 1.0
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) or Input.is_action_pressed("move_down"):
+		input_vec.y += 1.0
 	input_vec = input_vec.normalized()
 
 	if Input.is_action_just_pressed("dodge") and input_vec != Vector2.ZERO:
-		if survival_stats.use_stamina(18.0):
+		if survival_stats and survival_stats.has_method("use_stamina") and survival_stats.use_stamina(18.0):
 			_start_dodge(input_vec)
 			return
 
 	var is_sprinting = Input.is_key_pressed(KEY_SHIFT) and input_vec != Vector2.ZERO
 	var speed = move_speed
-	if is_sprinting and survival_stats.use_stamina(10.0 * delta):
+	if is_sprinting and survival_stats and survival_stats.has_method("use_stamina") and survival_stats.use_stamina(10.0 * delta):
 		speed = sprint_speed
 
 	velocity = input_vec * speed
@@ -107,19 +121,33 @@ func _handle_movement(delta: float) -> void:
 
 func _handle_action_input() -> void:
 	if Input.is_action_just_pressed("attack"):
-		match current_tool:
-			ToolMode.AXE:
-				if survival_stats.use_stamina(8.0):
-					_start_tool_action(PlayerState.ACTION_AXE, tex_axe, 5, 10.0, 0.4)
-					_try_hit_tree()
-			ToolMode.PICKAXE:
-				if survival_stats.use_stamina(8.0):
-					_start_tool_action(PlayerState.ACTION_MINE, tex_mining, 5, 10.0, 0.4)
-					_try_hit_rock()
-			ToolMode.SWORD:
-				if survival_stats.use_stamina(12.0):
-					_start_tool_action(PlayerState.ACTION_ATTACK, tex_attack, 9, 16.0, 0.45)
-					_try_hit_enemies()
+		_trigger_action()
+
+func _trigger_action() -> void:
+	if state != PlayerState.IDLE and state != PlayerState.WALK:
+		return
+
+	var mouse_p = get_global_mouse_position()
+	sprite.flip_h = mouse_p.x < global_position.x
+
+	match current_tool:
+		ToolMode.AXE:
+			if _can_use_stamina(8.0):
+				_start_tool_action(PlayerState.ACTION_AXE, tex_axe, 5, 12.0, 0.35)
+				_try_hit_interactable()
+		ToolMode.PICKAXE:
+			if _can_use_stamina(8.0):
+				_start_tool_action(PlayerState.ACTION_MINE, tex_mining, 5, 12.0, 0.35)
+				_try_hit_interactable()
+		ToolMode.SWORD:
+			if _can_use_stamina(12.0):
+				_start_tool_action(PlayerState.ACTION_ATTACK, tex_attack, 9, 16.0, 0.4)
+				_try_hit_interactable()
+
+func _can_use_stamina(amount: float) -> bool:
+	if survival_stats and survival_stats.has_method("use_stamina"):
+		return survival_stats.use_stamina(amount)
+	return true
 
 func _start_tool_action(new_state: PlayerState, tex: Texture2D, frames: int, fps: float, duration: float) -> void:
 	state = new_state
@@ -165,22 +193,23 @@ func _update_animation(delta: float) -> void:
 		current_frame = (current_frame + 1) % sprite.hframes
 		sprite.frame = current_frame
 
-func _try_hit_tree() -> void:
+func _try_hit_interactable() -> void:
+	if not interaction_area:
+		return
+		
+	var mouse_pos = get_global_mouse_position()
+	var candidates: Array = []
 	for body in interaction_area.get_overlapping_bodies():
-		if body is TreeProp:
-			body.take_hit()
-			return
+		if body.has_method("take_hit"):
+			candidates.append(body)
 
-func _try_hit_rock() -> void:
-	for body in interaction_area.get_overlapping_bodies():
-		if body is RockProp:
-			body.take_hit()
-			return
+	if candidates.is_empty():
+		return
 
-func _try_hit_enemies() -> void:
-	# Quet chem quai hoac cay/da xung quanh
-	for body in interaction_area.get_overlapping_bodies():
-		if body is TreeProp:
-			body.take_hit()
-		elif body is RockProp:
-			body.take_hit()
+	# Sort by distance to mouse position so aimed resource is prioritized
+	candidates.sort_custom(func(a, b): 
+		return a.global_position.distance_squared_to(mouse_pos) < b.global_position.distance_squared_to(mouse_pos)
+	)
+
+	var target = candidates[0]
+	target.take_hit(current_tool)

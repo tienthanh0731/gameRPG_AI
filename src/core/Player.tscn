@@ -1,15 +1,16 @@
-[gd_scene load_steps=6 format=3 uid="uid://cplayer01scene"]
+[gd_scene load_steps=7 format=3 uid="uid://cplayer01scene"]
 
 [ext_resource type="Script" path="res://src/core/Player.gd" id="1_player_script"]
 [ext_resource type="Script" path="res://src/core/SurvivalStats.gd" id="2_stats_script"]
 [ext_resource type="Texture2D" path="res://assets/characters/survivor_male/PlayerIdle-Sheet.png" id="3_player_tex"]
+[ext_resource type="Script" path="res://src/core/Inventory.gd" id="4_inventory_script"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
 radius = 8.0
 height = 20.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
-radius = 38.0
+radius = 55.0
 
 [node name="Player" type="CharacterBody2D"]
 y_sort_enabled = true
@@ -32,6 +33,9 @@ position_smoothing_enabled = true
 
 [node name="SurvivalStats" type="Node" parent="."]
 script = ExtResource("2_stats_script")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("4_inventory_script")
 
 [node name="InteractionArea" type="Area2D" parent="."]
 collision_layer = 0

@@ -1,22 +1,33 @@
-class_name HUD
 extends CanvasLayer
 
 @onready var health_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/HealthBar
 @onready var stamina_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/StaminaBar
 @onready var temp_label: Label = $LeftPanel/MarginContainer/VBoxContainer/TempLabel
+
+@onready var wood_label: Label = $RightPanel/MarginContainer/VBoxContainer/WoodLabel
+@onready var stone_label: Label = $RightPanel/MarginContainer/VBoxContainer/StoneLabel
+@onready var iron_label: Label = $RightPanel/MarginContainer/VBoxContainer/IronLabel
+
 @onready var biome_label: Label = $TopPanel/MarginContainer/VBoxContainer/BiomeLabel
 @onready var time_label: Label = $TopPanel/MarginContainer/VBoxContainer/TimeLabel
 @onready var phase_label: Label = $TopPanel/MarginContainer/VBoxContainer/PhaseLabel
+
 @onready var tool_label: Label = $BottomPanel/ToolLabel
 
-func _process(_delta: float) -> void:
-	# Update active tool indicator from player if available
-	var player = get_tree().get_first_node_in_group("player")
-	if player and tool_label:
-		match player.current_tool:
+func update_tool(tool_id: int) -> void:
+	if tool_label:
+		match tool_id:
 			0: tool_label.text = "[Phím 1] Đang cầm: RÌU ĐỐN CỦI (Click chuột trái để chặt cây)"
 			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột trái để đập đá)"
 			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột trái để chém)"
+
+func update_resources(wood: int, stone: int, iron: int) -> void:
+	if wood_label:
+		wood_label.text = "🪵 Gỗ: %d" % wood
+	if stone_label:
+		stone_label.text = "🪨 Đá: %d" % stone
+	if iron_label:
+		iron_label.text = "⛏️ Sắt: %d" % iron
 
 func update_health(current: float, max_val: float) -> void:
 	if health_bar:
