@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cq3teursa2eds"
+path="res://.godot/imported/bonefire.obj-41cf47a6cca84edef6cbd92ea95ae534.mesh"
+
+[deps]
+
+files=["res://.godot/imported/bonefire.obj-41cf47a6cca84edef6cbd92ea95ae534.mesh"]
+
+source_file="res://assets/raw_packs/Free_Sample/Free Sample/01 - OBJ/bonefire.obj"
+dest_files=["res://.godot/imported/bonefire.obj-41cf47a6cca84edef6cbd92ea95ae534.mesh", "res://.godot/imported/bonefire.obj-41cf47a6cca84edef6cbd92ea95ae534.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
