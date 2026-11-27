@@ -1,6 +1,10 @@
 extends CharacterBody2D
 
 signal tool_changed(tool_mode: int)
+## Phát khi độ bền / bậc trang bị thay đổi. equipment = {axe, pickaxe, sword}
+signal equipment_changed(equipment: Dictionary, current_tool: int)
+
+const SWORD_DAMAGE_MULT: float = 1.5
 
 enum ToolMode {
 	AXE,       # Phím 1: Đốn Củi
@@ -34,6 +38,8 @@ var tex_mining: Texture2D
 var tex_attack: Texture2D
 
 var current_tool: ToolMode = ToolMode.AXE
+## Trang bị đang dùng: { "axe": {tier, durability}, "pickaxe": {...}, "sword": {...} }
+var equipment: Dictionary = EquipmentData.default_loadout()
 var state: PlayerState = PlayerState.IDLE
 
 var anim_timer: float = 0.0
@@ -66,12 +72,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_1:
 			current_tool = ToolMode.AXE
 			tool_changed.emit(current_tool)
+			_emit_equipment()
 		elif event.keycode == KEY_2:
 			current_tool = ToolMode.PICKAXE
 			tool_changed.emit(current_tool)
+			_emit_equipment()
 		elif event.keycode == KEY_3:
 			current_tool = ToolMode.SWORD
 			tool_changed.emit(current_tool)
+			_emit_equipment()
 
 func _physics_process(delta: float) -> void:
 	match state:
@@ -139,18 +148,21 @@ func _trigger_action() -> void:
 	var mouse_p = get_global_mouse_position()
 	sprite.flip_h = mouse_p.x < global_position.x
 
+	# Thời gian vung phụ thuộc bậc công cụ (gãy → chậm nhất)
+	var swing: float = float(EquipmentData.stats_for(current_item()).swing)
+	var fps_scale := 0.35 / swing
 	match current_tool:
 		ToolMode.AXE:
 			if _can_use_stamina(8.0):
-				_start_tool_action(PlayerState.ACTION_AXE, tex_axe, 5, 12.0, 0.35)
+				_start_tool_action(PlayerState.ACTION_AXE, tex_axe, 5, 12.0 * fps_scale, swing)
 				_try_hit_interactable()
 		ToolMode.PICKAXE:
 			if _can_use_stamina(8.0):
-				_start_tool_action(PlayerState.ACTION_MINE, tex_mining, 5, 12.0, 0.35)
+				_start_tool_action(PlayerState.ACTION_MINE, tex_mining, 5, 12.0 * fps_scale, swing)
 				_try_hit_interactable()
 		ToolMode.SWORD:
 			if _can_use_stamina(12.0):
-				_start_tool_action(PlayerState.ACTION_ATTACK, tex_attack, 9, 16.0, 0.4)
+				_start_tool_action(PlayerState.ACTION_ATTACK, tex_attack, 9, 16.0 * fps_scale, swing + 0.05)
 				_try_hit_interactable()
 
 func _can_use_stamina(amount: float) -> bool:
@@ -221,7 +233,72 @@ func _try_hit_interactable() -> void:
 	)
 
 	var target = candidates[0]
-	target.take_hit(current_tool)
+	var item := current_item()
+	var st: Dictionary = EquipmentData.stats_for(item)
+	var tier := -1 if EquipmentData.is_broken(item) else int(item.get("tier", 0))
+	if target.has_method("harvest_hit"):
+		# Cây / đá: độ cứng vật liệu quyết định số nhát + độ mòn
+		var hardness: int = target.harvest_hit(current_tool, int(st.power), tier, int(st.bonus_yield))
+		if hardness >= 0:
+			_wear(hardness)
+	elif current_tool == ToolMode.SWORD and target.is_in_group("enemy"):
+		target.take_hit(current_tool, int(round(float(st.power) * SWORD_DAMAGE_MULT)))
+		_wear(0)
+	else:
+		target.take_hit(current_tool)
+
+# ==========================================
+# TRANG BỊ & ĐỘ BỀN
+# ==========================================
+func current_item() -> Dictionary:
+	var key: String = EquipmentData.SLOT_KEYS[int(current_tool)]
+	if not equipment.has(key):
+		equipment[key] = EquipmentData.default_loadout()[key]
+	return equipment[key]
+
+func _wear(hardness: int) -> void:
+	var item := current_item()
+	if EquipmentData.apply_wear(item, hardness):
+		_spawn_hint("%s đã GÃY! Chế tạo / sửa ở bàn chế tạo [I]" % EquipmentData.item_name(int(current_tool), int(item.tier)), Color(1, 0.35, 0.3))
+	_emit_equipment()
+
+## Trang bị công cụ mới (đầy độ bền). Trả về false nếu không tốt hơn cái đang có.
+func equip_tool(slot: int, tier: int) -> bool:
+	var key: String = EquipmentData.SLOT_KEYS[slot]
+	var cur: Dictionary = equipment.get(key, {})
+	if not cur.is_empty() and int(cur.get("tier", 0)) >= tier and not EquipmentData.is_broken(cur):
+		return false
+	equipment[key] = { "tier": tier, "durability": EquipmentData.max_durability(tier) }
+	_emit_equipment()
+	return true
+
+func repair_tool(slot: int) -> void:
+	var item: Dictionary = equipment[EquipmentData.SLOT_KEYS[slot]]
+	item["durability"] = EquipmentData.max_durability(int(item.tier))
+	_emit_equipment()
+
+func set_equipment(data: Dictionary) -> void:
+	equipment = EquipmentData.default_loadout()
+	for k in EquipmentData.SLOT_KEYS:
+		if data.has(k) and data[k] is Dictionary:
+			equipment[k] = { "tier": int(data[k].get("tier", 0)), "durability": int(data[k].get("durability", 0)) }
+	_emit_equipment()
+
+func _emit_equipment() -> void:
+	equipment_changed.emit(equipment, int(current_tool))
+
+func _spawn_hint(text: String, col: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.top_level = true
+	label.global_position = global_position + Vector2(-110, -70)
+	label.modulate = col
+	label.add_theme_font_size_override("font_size", 13)
+	get_parent().add_child(label)
+	var tw := label.create_tween().set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 25.0, 1.2)
+	tw.tween_property(label, "modulate:a", 0.0, 1.2)
+	tw.chain().tween_callback(label.queue_free)
 
 ## [F] Ăn 1 Thịt Rừng: +30 no, +10 HP.
 func _try_eat() -> void:

@@ -147,12 +147,15 @@ func _start_attack() -> void:
 					stats.take_damage(attack_damage)
 	)
 
-func take_hit(tool_id: int = 2) -> void:
+## power > 0: sát thương do Player tính theo bậc vũ khí (EquipmentData).
+func take_hit(tool_id: int = 2, power: int = -1) -> void:
 	if state == BoarState.DEATH:
 		return
 		
 	_ensure_textures()
 	var dmg = 15 if tool_id == 2 else 5
+	if power > 0:
+		dmg = power
 	if GameState:
 		dmg = int(round(dmg * GameState.get_player_damage_mult()))
 	current_health -= dmg

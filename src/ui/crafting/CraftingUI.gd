@@ -48,10 +48,10 @@ func _load_category(cat_idx: int) -> void:
 	var player = get_tree().get_first_node_in_group("player")
 	var inv: Node = player.get_node_or_null("Inventory") if player else null
 	
-	for r in CraftingCatalog.RECIPES:
+	for r in CraftingCatalog.get_recipes():
 		if r.category == cat_idx:
 			filtered_recipes.append(r)
-			var can_afford = _check_afford(r.cost, inv)
+			var can_afford = _check_afford(_cost_of(r, player), inv) and _usable_reason(r, player) == ""
 			var prefix = "✓ " if can_afford else "✗ "
 			var idx = item_list.add_item(prefix + r.name)
 			if can_afford:
@@ -72,15 +72,17 @@ func _on_recipe_selected(index: int) -> void:
 	
 	var player = get_tree().get_first_node_in_group("player")
 	var inv: Node = player.get_node_or_null("Inventory") if player else null
-	var can_afford = _check_afford(selected_recipe.cost, inv)
+	var cost: Dictionary = _cost_of(selected_recipe, player)
+	var reason := _usable_reason(selected_recipe, player)
+	var can_afford = _check_afford(cost, inv) and reason == ""
 	
 	label_detail_name.text = selected_recipe.name
-	label_detail_desc.text = selected_recipe.desc
+	label_detail_desc.text = selected_recipe.desc + _equipment_status(selected_recipe, player)
 	
 	# Build required cost text
 	var cost_text = "Nguyên liệu yêu cầu:\n"
-	for mat in selected_recipe.cost.keys():
-		var req = selected_recipe.cost[mat]
+	for mat in cost.keys():
+		var req = cost[mat]
 		var cur = _get_inv_val(mat, inv)
 		var mat_name = _get_mat_display_name(mat)
 		var status = "✓" if cur >= req else "✗"
@@ -94,7 +96,35 @@ func _on_recipe_selected(index: int) -> void:
 	else:
 		label_detail_cost.modulate = Color(1.0, 0.4, 0.4)
 		btn_craft.disabled = true
-		btn_craft.text = "THIẾU NGUYÊN LIỆU"
+		btn_craft.text = reason if reason != "" else "THIẾU NGUYÊN LIỆU"
+
+## Chi phí thật của công thức (sửa chữa phụ thuộc bậc công cụ đang dùng).
+func _cost_of(recipe: Dictionary, player: Node) -> Dictionary:
+	if recipe.get("type") == "repair" and player and "equipment" in player:
+		var item: Dictionary = player.equipment[EquipmentData.SLOT_KEYS[int(recipe.slot)]]
+		return EquipmentData.repair_cost(int(item.tier))
+	return recipe.get("cost", {})
+
+## "" nếu chế tạo được, ngược lại là lý do (hiện trên nút).
+func _usable_reason(recipe: Dictionary, player: Node) -> String:
+	if not player or not "equipment" in player:
+		return ""
+	var t = recipe.get("type")
+	if t != "equipment" and t != "repair":
+		return ""
+	var item: Dictionary = player.equipment[EquipmentData.SLOT_KEYS[int(recipe.slot)]]
+	if t == "repair":
+		return "ĐANG ĐẦY ĐỘ BỀN" if int(item.durability) >= EquipmentData.max_durability(int(item.tier)) else ""
+	if int(item.tier) >= int(recipe.tier) and not EquipmentData.is_broken(item):
+		return "ĐÃ CÓ BẬC NÀY HOẶC CAO HƠN"
+	return ""
+
+func _equipment_status(recipe: Dictionary, player: Node) -> String:
+	if not recipe.has("slot") or not player or not "equipment" in player:
+		return ""
+	var item: Dictionary = player.equipment[EquipmentData.SLOT_KEYS[int(recipe.slot)]]
+	return "\nĐang dùng: %s — độ bền %d/%d" % [EquipmentData.item_name(int(recipe.slot), int(item.tier)),
+		int(item.durability), EquipmentData.max_durability(int(item.tier))]
 
 func _check_afford(cost: Dictionary, inv: Node) -> bool:
 	if not inv: return false
@@ -134,11 +164,12 @@ func _on_btn_craft_pressed() -> void:
 	if not player: return
 	var inv = player.get_node_or_null("Inventory")
 	var stats = player.get_node_or_null("SurvivalStats")
-	if not inv or not _check_afford(selected_recipe.cost, inv): return
+	var cost: Dictionary = _cost_of(selected_recipe, player)
+	if not inv or not _check_afford(cost, inv) or _usable_reason(selected_recipe, player) != "": return
 	
 	# 1. Deduct cost
-	for mat in selected_recipe.cost.keys():
-		var amt = selected_recipe.cost[mat]
+	for mat in cost.keys():
+		var amt = cost[mat]
 		match mat:
 			"wood": inv.wood -= amt
 			"stone": inv.stone -= amt
@@ -160,9 +191,10 @@ func _on_btn_craft_pressed() -> void:
 				if selected_recipe.has("warmth"):
 					stats.body_temperature = 37.0
 					stats.temperature_changed.emit(37.0)
-		"tool_upgrade", "weapon_upgrade":
-			# Boost player's attack or gathering
-			pass
+		"equipment":
+			player.equip_tool(int(selected_recipe.slot), int(selected_recipe.tier))
+		"repair":
+			player.repair_tool(int(selected_recipe.slot))
 		"structure_item":
 			inv.wood += 2
 			inv.stone += 1

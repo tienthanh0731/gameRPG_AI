@@ -9,36 +9,6 @@ enum Category {
 
 const RECIPES = [
 	{
-		"id": "iron_axe",
-		"name": "Rìu Sắt Sắc Bén",
-		"category": Category.TOOLS_WEAPONS,
-		"desc": "Rìu tôi luyện bằng sắt hoang cổ. Đốn hạ cổ thụ nhanh x2 và nhận gấp đôi gỗ.",
-		"cost": { "wood": 6, "iron": 4 },
-		"icon_path": "res://assets/ui_icons/rpg_icons_32x32/axe_01a.png",
-		"type": "tool_upgrade",
-		"bonus_dmg": 20
-	},
-	{
-		"id": "iron_pickaxe",
-		"name": "Cuốc Thạch Kim",
-		"category": Category.TOOLS_WEAPONS,
-		"desc": "Cuốc nặng đào khoáng thạch. Đập đá nhanh gấp đôi và tăng tỉ lệ rơi quặng sắt.",
-		"cost": { "wood": 6, "stone": 4, "iron": 4 },
-		"icon_path": "res://assets/ui_icons/rpg_icons_32x32/pickaxe_01a.png",
-		"type": "tool_upgrade",
-		"bonus_dmg": 20
-	},
-	{
-		"id": "iron_sword",
-		"name": "Cổ Phong Trảm Mã Kiếm",
-		"category": Category.TOOLS_WEAPONS,
-		"desc": "Thanh kiếm rèn bằng thiết thạch và xương thú. Sát thương 35, quét sạch bầy dã thú.",
-		"cost": { "wood": 8, "iron": 8, "bone": 4 },
-		"icon_path": "res://assets/ui_icons/rpg_icons_32x32/sword_01a.png",
-		"type": "weapon_upgrade",
-		"bonus_dmg": 35
-	},
-	{
 		"id": "healing_salve",
 		"name": "Đan Dược Trị Thương",
 		"category": Category.SURVIVAL_MED,
@@ -80,3 +50,41 @@ const RECIPES = [
 		"struct_type": "wall"
 	}
 ]
+
+
+const TOOL_ICONS: Array[String] = [
+	"res://assets/ui_icons/rpg_icons_32x32/axe_01a.png",
+	"res://assets/ui_icons/rpg_icons_32x32/pickaxe_01a.png",
+	"res://assets/ui_icons/rpg_icons_32x32/sword_01a.png",
+]
+
+## Toàn bộ công thức: công cụ/vũ khí theo bậc (sinh từ EquipmentData) + sửa chữa + RECIPES tĩnh.
+static func get_recipes() -> Array:
+	var out: Array = []
+	for slot in 3:
+		for tier in range(1, EquipmentData.MAX_TIER + 1):
+			var st: Dictionary = EquipmentData.TIER_STATS[tier]
+			out.append({
+				"id": "%s_t%d" % [EquipmentData.SLOT_KEYS[slot], tier],
+				"name": EquipmentData.item_name(slot, tier),
+				"category": Category.TOOLS_WEAPONS,
+				"desc": "Sức mạnh %d • vung %.2fs • độ bền %d • +%d sản lượng. Thay thế công cụ cùng loại bậc thấp hơn." % [
+					st.power, st.swing, st.durability, st.bonus_yield],
+				"cost": EquipmentData.craft_cost(slot, tier),
+				"icon_path": TOOL_ICONS[slot],
+				"type": "equipment",
+				"slot": slot,
+				"tier": tier,
+			})
+		out.append({
+			"id": "repair_%s" % EquipmentData.SLOT_KEYS[slot],
+			"name": "Sửa %s đang dùng" % EquipmentData.SLOT_NAMES[slot],
+			"category": Category.TOOLS_WEAPONS,
+			"desc": "Phục hồi đầy độ bền. Tốn 3 nguyên liệu theo bậc: Gỗ / Đá / Sắt.",
+			"cost": {}, # tính động theo bậc hiện tại (CraftingUI._cost_of)
+			"icon_path": TOOL_ICONS[slot],
+			"type": "repair",
+			"slot": slot,
+		})
+	out.append_array(RECIPES)
+	return out

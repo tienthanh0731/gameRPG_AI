@@ -138,7 +138,27 @@ func update_tool(tool_id: int) -> void:
 		0: tool_label.text = "[1] RÌU (chặt cây) | [2] Cuốc | [3] Kiếm | [B] Xây dựng | [E] Vào phó bản / mở cổng"
 		1: tool_label.text = "[2] CUỐC (đập đá, quặng) | [1] Rìu | [3] Kiếm | [B] Xây dựng"
 		2: tool_label.text = "[3] KIẾM (chiến đấu) | [1] Rìu | [2] Cuốc | [Space] Lướt né | [B] Xây dựng"
-		3: tool_label.text = "[XÂY DỰNG] 4: Tường (4 Gỗ) | 5: Cổng (6 Gỗ, 2 Đá) | 6: Bẫy (3 Gỗ, 1 Đá) | Click đặt | [B] Thoát"
+		3: tool_label.text = "[XÂY DỰNG] 4: Tường (4 Gỗ) | 5: Cổng (6 Gỗ, 2 Đá) | 6: Bẫy (3 Gỗ, 1 Đá) | Click đặt | [U] Nâng cấp | [B] Thoát"
+	if tool_id <= 2 and not last_equipment.is_empty():
+		tool_label.text += "   •   " + _equipment_text(last_equipment, tool_id)
+
+var last_equipment: Dictionary = {}
+
+## Hiển thị bậc + độ bền công cụ đang cầm (Player.equipment_changed).
+func update_equipment(equipment: Dictionary, current_tool: int) -> void:
+	last_equipment = equipment
+	update_tool(current_tool)
+
+func _equipment_text(equipment: Dictionary, slot: int) -> String:
+	var item: Dictionary = equipment.get(EquipmentData.SLOT_KEYS[slot], {})
+	if item.is_empty():
+		return ""
+	if EquipmentData.is_broken(item):
+		tool_label.modulate = Color(1, 0.4, 0.35)
+		return "⚠ %s ĐÃ GÃY (tay không) — sửa ở [I]" % EquipmentData.item_name(slot, int(item.tier))
+	var mx := EquipmentData.max_durability(int(item.tier))
+	tool_label.modulate = Color(1, 0.8, 0.4) if int(item.durability) * 4 < mx else Color.WHITE
+	return "%s — Độ bền %d/%d" % [EquipmentData.item_name(slot, int(item.tier)), int(item.durability), mx]
 
 func update_inventory(inv_dict: Dictionary) -> void:
 	if wood_label: wood_label.text = "🪵 Gỗ: %d" % inv_dict.get("wood", 0)

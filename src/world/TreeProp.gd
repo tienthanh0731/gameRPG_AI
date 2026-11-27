@@ -6,28 +6,48 @@ signal tree_chopped(wood_amount: int, drop_pos: Vector2)
 var current_health: int = 3
 var is_stump: bool = false
 var stump_texture: Texture2D
+## Loại cây (độ cứng vật liệu) — xem EquipmentData.TREE_KINDS
+var kind: Dictionary = {}
+var bonus_yield: int = 0
 
 func _ready() -> void:
+	# Loại cây cố định theo vị trí (cùng seed map → cùng loại cây)
+	var r := float(absi(hash(Vector2i(position))) % 1000) / 1000.0
+	kind = EquipmentData.pick_tree_kind(r)
+	max_health = int(kind.toughness)
 	current_health = max_health
+	var spr = get_node_or_null("Sprite2D")
+	if spr:
+		spr.scale *= float(kind.scale)
+		if int(kind.min_tier) > 0:
+			spr.modulate = Color(0.8, 0.95, 0.75)
 	if not stump_texture:
 		var stump_path = "res://assets/raw_packs/Tiny Swords (Free Pack)/Tiny Swords (Free Pack)/Terrain/Resources/Wood/Trees/Stump 1.png"
 		if ResourceLoader.exists(stump_path):
 			stump_texture = load(stump_path)
 
 func take_hit(tool_id: int = 0) -> void:
+	harvest_hit(tool_id, int(EquipmentData.TIER_STATS[0].power), 0, 0)
+
+## Một nhát khai thác. Trả về bậc cứng của vật liệu nếu nhát được tính
+## (để Player trừ độ bền), hoặc -1 nếu sai công cụ / công cụ quá yếu.
+func harvest_hit(tool_id: int, power: int, tool_tier: int, yield_bonus: int) -> int:
 	if is_stump:
-		return
-		
+		return -1
 	if tool_id != 0: # 0 is AXE
 		_spawn_hint_text("Cần Rìu Đốn Củi (Phím 1)!")
 		_play_clink_effect()
-		return
-
-	current_health -= 1
+		return -1
+	if tool_tier < int(kind.min_tier):
+		_spawn_hint_text("%s quá cứng — cần Rìu %s trở lên!" % [kind.name, EquipmentData.TIER_NAMES[int(kind.min_tier)]])
+		_play_clink_effect()
+		return -1
+	current_health -= power
+	bonus_yield = yield_bonus
 	_play_shake_effect()
-	
 	if current_health <= 0:
 		_fall_down()
+	return int(kind.hardness)
 
 func _play_shake_effect() -> void:
 	var spr = get_node_or_null("Sprite2D")
@@ -62,7 +82,7 @@ func _fall_down() -> void:
 	if col:
 		col.set_deferred("disabled", true)
 		
-	var wood_amount = randi_range(3, 5)
+	var wood_amount = randi_range(int(kind.wood[0]), int(kind.wood[1])) + bonus_yield
 	tree_chopped.emit(wood_amount, global_position)
 
 func _spawn_hint_text(text: String) -> void:

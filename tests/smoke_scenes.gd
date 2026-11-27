@@ -34,6 +34,24 @@ func _run() -> void:
 	check(main != null and main.name == "Main", "Main loaded")
 	check(main.dungeon_nodes.size() == GameState.get_dungeon_count(), "N(d) dungeon entrances spawned")
 
+	# Bàn chế tạo: rèn Rìu Đá qua UI thật
+	var craft = main.get_node("HUD/CraftingUI")
+	var inv_n = main.player.get_node("Inventory")
+	inv_n.wood = 20
+	inv_n.stone = 20
+	craft._load_category(0)
+	var idx := -1
+	for i in craft.filtered_recipes.size():
+		if craft.filtered_recipes[i].get("id") == "axe_t1":
+			idx = i
+	check(idx >= 0, "stone axe recipe listed")
+	craft._on_recipe_selected(idx)
+	craft._on_btn_craft_pressed()
+	check(main.player.equipment.axe.tier == 1, "crafted & equipped Rìu Đá")
+	check(inv_n.stone == 14, "6 stone consumed")
+	craft._on_recipe_selected(idx)
+	check(craft.btn_craft.disabled, "cannot craft same tier again")
+
 	# Tua tới hoàng hôn rồi đêm
 	var dn = main.get_node("DayNightCycle")
 	dn.current_time_hours = 17.1

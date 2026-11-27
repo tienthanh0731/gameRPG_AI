@@ -66,6 +66,9 @@ func _ready() -> void:
 		GameState.apply_player(player)
 		if player.has_signal("tool_changed") and hud and hud.has_method("update_tool"):
 			player.tool_changed.connect(hud.update_tool)
+			if player.has_signal("equipment_changed") and hud.has_method("update_equipment"):
+				player.equipment_changed.connect(hud.update_equipment)
+				hud.update_equipment(player.equipment, int(player.current_tool))
 			hud.update_tool(player.current_tool)
 		if stats:
 			_on_health_changed(stats.current_health, stats.max_health)

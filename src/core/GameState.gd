@@ -82,6 +82,8 @@ func capture_player(player: Node) -> void:
 	var inv := player.get_node_or_null("Inventory")
 	if inv and inv.has_method("to_dict"):
 		c["inventory"] = inv.to_dict()
+	if "equipment" in player:
+		c["equipment"] = player.equipment.duplicate(true)
 
 ## Áp thiên phú + khôi phục chỉ số/túi đồ đã lưu lên Player.
 func apply_player(player: Node) -> void:
@@ -100,6 +102,8 @@ func apply_player(player: Node) -> void:
 	var inv := player.get_node_or_null("Inventory")
 	if inv and inv.has_method("from_dict"):
 		inv.from_dict(c.get("inventory", {}))
+	if player.has_method("set_equipment"):
+		player.set_equipment(c.get("equipment", EquipmentData.default_loadout()))
 
 func apply_talent_stats(player: Node, refill: bool) -> void:
 	var t := active_talent

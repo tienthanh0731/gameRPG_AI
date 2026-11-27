@@ -25,6 +25,7 @@ func _ready() -> void:
 	_test_sp_and_day_end()
 	_test_reroll_once()
 	_test_structure_upgrade()
+	_test_equipment_durability()
 	_test_daily_quests()
 	_test_outpost_income_and_unclaimed()
 	_test_permadeath_atomic()
@@ -221,6 +222,8 @@ func _test_structure_upgrade() -> void:
 	add_child(wall2)
 	check(not bm.upgrade_structure(wall2), "refused without stone")
 	inv.stone = 6
+	# tắt nhiệm vụ ngày để chỉ đo +15 SP của nâng cấp
+	SaveSystem.character_data["quests"] = { "day": GameState.current_day, "list": [] }
 	var sp0 = GameState.today_sp
 	check(bm.upgrade_structure(wall2), "upgrade with 6 stone")
 	check(inv.stone == 0 and wall2.tier == 1, "stone consumed, tier 1")
@@ -286,3 +289,58 @@ func _test_outpost_income_and_unclaimed() -> void:
 	var taken = GameState.take_unclaimed_rewards()
 	check(taken.size() == s.chest.items.size() and GameState.take_unclaimed_rewards().is_empty(), "claimed exactly once")
 	SaveSystem.character_data["captured_outposts"] = []
+
+func _test_equipment_durability() -> void:
+	print("equipment tiers + material toughness + durability")
+	var E = EquipmentData
+	var wood_axe = { "tier": 0, "durability": 40 }
+	var stone_axe = { "tier": 1, "durability": 90 }
+	var iron_axe = { "tier": 2, "durability": 200 }
+	var tree_t = E.TREE_KINDS[1].toughness # Cây Rừng 40
+	check(E.hits_needed(wood_axe, tree_t) == 4 and E.hits_needed(iron_axe, tree_t) == 2, "hits: wood 4 vs iron 2")
+	var tw = E.time_to_harvest(wood_axe, tree_t)
+	var ts = E.time_to_harvest(stone_axe, tree_t)
+	var ti = E.time_to_harvest(iron_axe, tree_t)
+	check(tw > ts and ts > ti, "chop time wood %.2fs > stone %.2fs > iron %.2fs" % [tw, ts, ti])
+	check(not E.can_harvest(wood_axe, E.TREE_KINDS[2].min_tier), "wood axe can't fell Cổ Thụ")
+	check(E.can_harvest(stone_axe, E.TREE_KINDS[2].min_tier), "stone axe can")
+	var t = { "tier": 0, "durability": 3 }
+	check(not E.apply_wear(t, 0) and t.durability == 2, "wear -1 on soft material")
+	check(E.apply_wear(t, 2) and t.durability == 0, "hard material wears 3 → breaks")
+	check(E.is_broken(t) and E.stats_for(t).power < E.TIER_STATS[0].power, "broken = bare hands")
+	check(not E.can_harvest(t, 0), "broken tool can't harvest even soft? (min_tier 0 needs tier >= 0)")
+	check(E.repair_cost(2).has("iron") and E.repair_cost(0).has("wood"), "repair cost by tier material")
+	check(E.craft_cost(2, 1).has("bone"), "sword needs bone")
+
+	# Cây thật: số nhát theo bậc rìu, sai bậc thì không tính
+	var tree = load("res://src/world/TreeProp.gd").new()
+	tree.position = Vector2(64, 128)
+	add_child(tree)
+	tree.kind = E.TREE_KINDS[2] # Cổ Thụ
+	tree.current_health = tree.kind.toughness
+	check(tree.harvest_hit(0, 10, 0, 0) == -1, "Cổ Thụ rejects wood axe")
+	check(tree.harvest_hit(1, 30, 2, 0) == -1, "pickaxe rejected on tree")
+	var hits = 0
+	while not tree.is_stump and hits < 20:
+		tree.harvest_hit(0, 30, 2, 2)
+		hits += 1
+	check(hits == 3 and tree.is_stump, "iron axe fells Cổ Thụ in 3 hits (got %d)" % hits)
+	tree.queue_free()
+
+	# Player: trang bị, gãy, sửa, chỉ nhận đồ tốt hơn, lưu/khôi phục
+	var player = load("res://src/core/Player.tscn").instantiate()
+	add_child(player)
+	check(player.equipment.axe.tier == 0, "starts with wood tools")
+	check(player.equip_tool(0, 2) and player.equipment.axe.tier == 2, "equip iron axe")
+	check(not player.equip_tool(0, 1), "won't downgrade to stone")
+	player.equipment.axe.durability = 0
+	check(player.equip_tool(0, 1), "broken tool can be replaced by lower tier")
+	player.equipment.axe.durability = 5
+	player.repair_tool(0)
+	check(player.equipment.axe.durability == E.max_durability(1), "repair restores max")
+	GameState.capture_player(player)
+	check(SaveSystem.character_data.equipment.axe.tier == 1, "equipment saved to character")
+	player.set_equipment({})
+	GameState.apply_player(player)
+	check(player.equipment.axe.tier == 1, "equipment restored from save")
+	player.queue_free()
