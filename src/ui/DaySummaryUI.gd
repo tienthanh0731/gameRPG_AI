@@ -50,6 +50,8 @@ func setup(summary_data: Dictionary) -> void:
 func _on_btn_continue_pressed() -> void:
 	# Add rewards to player's inventory
 	var player = get_tree().get_first_node_in_group("player")
+	if not player:
+		player = get_tree().root.find_child("Player", true, false)
 	if player:
 		var inv = player.get_node_or_null("Inventory")
 		if inv:

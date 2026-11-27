@@ -48,6 +48,7 @@ var action_timer: float = 0.0
 var facing_dir: Vector2 = Vector2.RIGHT
 
 func _ready() -> void:
+	add_to_group("player")
 	tex_idle = load("res://assets/characters/survivor_male/PlayerIdle-Sheet.png")
 	tex_walk = load("res://assets/characters/survivor_male/PlayerWalk-Sheet.png")
 	tex_axe = load("res://assets/characters/survivor_male/PlayerAxe-Sheet.png")

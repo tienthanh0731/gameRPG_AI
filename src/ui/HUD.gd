@@ -9,6 +9,9 @@ extends CanvasLayer
 @onready var wood_label: Label = $RightPanel/MarginContainer/VBoxContainer/WoodLabel
 @onready var stone_label: Label = $RightPanel/MarginContainer/VBoxContainer/StoneLabel
 @onready var iron_label: Label = $RightPanel/MarginContainer/VBoxContainer/IronLabel
+@onready var meat_label: Label = $RightPanel/MarginContainer/VBoxContainer/MeatLabel
+@onready var bone_label: Label = $RightPanel/MarginContainer/VBoxContainer/BoneLabel
+@onready var pill_label: Label = $RightPanel/MarginContainer/VBoxContainer/PillLabel
 @onready var sp_label: Label = $RightPanel/MarginContainer/VBoxContainer/SPLabel
 @onready var talent_label: Label = $RightPanel/MarginContainer/VBoxContainer/TalentLabel
 @onready var btn_leaderboard: Button = $RightPanel/MarginContainer/VBoxContainer/BtnLeaderboard
@@ -94,6 +97,14 @@ func update_tool(tool_id: int) -> void:
 			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột để đập đá) | [Phím B] Xây dựng"
 			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột để chém) | [Phím B] Xây dựng"
 			3: tool_label.text = "[CHẾ ĐỘ XÂY DỰNG] Phím 4: Tường (4 Gỗ) | Phím 5: Cổng (6 Gỗ) | Phím 6: Bẫy (3 Gỗ) | [B] Thoát"
+
+func update_inventory(inv_dict: Dictionary) -> void:
+	if wood_label: wood_label.text = "🪵 Gỗ: %d" % inv_dict.get("wood", 0)
+	if stone_label: stone_label.text = "🪨 Đá: %d" % inv_dict.get("stone", 0)
+	if iron_label: iron_label.text = "⛏️ Sắt: %d" % inv_dict.get("iron", 0)
+	if meat_label: meat_label.text = "🍖 Thịt Rừng: %d" % inv_dict.get("meat", 0)
+	if bone_label: bone_label.text = "🦴 Xương / Da: %d" % inv_dict.get("bone", 0)
+	if pill_label: pill_label.text = "💊 Đan Reroll: %d" % inv_dict.get("reroll_pills", 0)
 
 func update_resources(wood: int, stone: int, iron: int) -> void:
 	if wood_label:

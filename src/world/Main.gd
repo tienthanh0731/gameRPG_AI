@@ -2,6 +2,7 @@ extends Node2D
 
 const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
 const DungeonEntranceScene = preload("res://src/dungeon/DungeonEntrance.tscn")
+const TalentData = preload("res://src/data/TalentData.gd")
 
 @onready var map_gen: Node2D = $MapGenerator
 @onready var player: CharacterBody2D = $Player
@@ -68,14 +69,12 @@ func _ready() -> void:
 		var inv = player.get_node_or_null("Inventory")
 		if inv:
 			if SaveSystem.has_active_character() and SaveSystem.character_data.has("inventory"):
-				var saved_inv = SaveSystem.character_data["inventory"]
-				inv.wood = saved_inv.get("wood", 0)
-				inv.stone = saved_inv.get("stone", 0)
-				inv.iron = saved_inv.get("iron", 0)
-				inv.meat = saved_inv.get("meat", 0)
-				inv.bone = saved_inv.get("bone", 0)
+				inv.load_inventory_dict(SaveSystem.character_data["inventory"])
 				
-			if hud and hud.has_method("update_resources"):
+			if hud and hud.has_method("update_inventory"):
+				inv.inventory_updated.connect(hud.update_inventory)
+				hud.update_inventory(inv.get_inventory_dict())
+			elif hud and hud.has_method("update_resources"):
 				inv.resources_updated.connect(hud.update_resources)
 				hud.update_resources(inv.wood, inv.stone, inv.iron)
 			

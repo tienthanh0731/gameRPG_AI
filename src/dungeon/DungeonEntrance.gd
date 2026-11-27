@@ -18,14 +18,14 @@ func _ready() -> void:
 		portal_sprite.modulate = Color(0.4, 0.7, 1.2, 0.9) # Mysterious blue glow
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "Player" or (body is CharacterBody2D and body.get_node_or_null("Inventory") != null):
 		is_player_nearby = true
 		player_ref = body as CharacterBody2D
 		prompt_label.visible = true
 		prompt_label.text = "[E] BƯỚC VÀO TÀN TÍCH CỔ SƠN ĐỘNG\n(Phó bản ngẫu nhiên • Thưởng: Đan Reroll & +30 SP)"
 
 func _on_body_exited(body: Node2D) -> void:
-	if body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "Player" or body == player_ref:
 		is_player_nearby = false
 		prompt_label.visible = false
 

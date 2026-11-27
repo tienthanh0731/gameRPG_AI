@@ -104,7 +104,7 @@ anchor_right = 1.0
 offset_left = -260.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 210.0
+offset_bottom = 275.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -150,6 +150,24 @@ modulate = Color(0.6, 0.85, 1, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "⛏️ Sắt: 0"
+
+[node name="MeatLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(1, 0.5, 0.5, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🍖 Thịt Rừng: 0"
+
+[node name="BoneLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(0.9, 0.9, 0.9, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🦴 Xương / Da: 0"
+
+[node name="PillLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(0.4, 1, 0.6, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "💊 Đan Reroll: 0"
 
 [node name="BtnLeaderboard" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 28)
