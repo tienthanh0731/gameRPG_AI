@@ -1,5 +1,6 @@
 @echo off
-title Chay Game - Lam Tinh Hoang Co Ky
-echo Dang khoi chay Game Prototype...
-start "" "C:\Users\admin\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64.exe" --path "%~dp0"
+cd /d "%~dp0"
+title Chay Game Prototype - Lam Tinh Hoang Co Ky
+echo Dang khoi chay Game...
+start "" "%~dp0godot.exe"
 exit

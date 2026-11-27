@@ -1,6 +1,7 @@
 # Godot 4 specific ignores
 .godot/
 *.translation
+godot.exe
 
 # OS generated files
 Thumbs.db
