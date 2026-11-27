@@ -54,12 +54,17 @@ func setup(summary_data: Dictionary) -> void:
 func _on_btn_continue_pressed() -> void:
 	# Add rewards to player's inventory
 	var player = get_tree().get_first_node_in_group("player")
+	if not player:
+		player = get_tree().root.find_child("Player", true, false)
+	# Nguồn sự thật là "unclaimed_rewards" trong nhân vật (nhận đúng 1 lần)
+	var items: Array = GameState.take_unclaimed_rewards()
 	if player:
 		var inv = player.get_node_or_null("Inventory")
 		if inv:
-			for item in cached_rewards:
+			GameState.granting_rewards = true
+			for item in items:
 				inv.add_resource(item.get("name", ""), item.get("amount", 1))
-				
+			GameState.granting_rewards = false
 	cached_rewards = []
 	if GameState:
 		GameState.capture_player(player)

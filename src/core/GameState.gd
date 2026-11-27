@@ -26,6 +26,9 @@ var active_dungeon: Dictionary = {}
 var raid_kills_tonight: int = 0
 var raid_size_tonight: int = 0
 
+## true khi đang cộng rương thưởng vào túi (để nhiệm vụ "thu thập" không tính).
+var granting_rewards: bool = false
+
 func _ready() -> void:
 	EventBus.enemy_killed.connect(_on_enemy_killed)
 
@@ -117,6 +120,31 @@ func get_player_damage_mult() -> float:
 
 func get_gather_mult() -> float:
 	return float(active_talent.get("gather_mult", 1.0))
+
+## Thiên phú tăng máu công trình: Thổ Bá +100%, Hoang Cổ Bá Chủ +200%.
+func get_structure_hp_mult() -> float:
+	match str(active_talent.get("id", "")):
+		"b_earth_lord": return 2.0
+		"sss_primordial_overlord": return 3.0
+	return 1.0
+
+## Sản lượng thụ động của các cứ điểm đã chiếm (cộng vào rương cuối ngày).
+const OUTPOST_INCOME := { "Gỗ": 8, "Đá": 5, "Quặng Sắt": 2 }
+
+func get_outpost_income() -> Array:
+	var n: int = SaveSystem.character_data.get("captured_outposts", []).size()
+	if n <= 0:
+		return []
+	var out: Array = []
+	for item_name in OUTPOST_INCOME:
+		out.append({ "name": item_name, "amount": OUTPOST_INCOME[item_name] * n, "source": "Lãnh thổ" })
+	return out
+
+## Rương chưa nhận (tắt game khi popup tổng kết đang mở) → trả về và xóa.
+func take_unclaimed_rewards() -> Array:
+	var items: Array = SaveSystem.character_data.get("unclaimed_rewards", [])
+	SaveSystem.character_data.erase("unclaimed_rewards")
+	return items
 
 # ==========================================
 # CÔNG THỨC SCALING ĐỘ KHÓ THEO NGÀY (SPEC §5)
@@ -283,7 +311,11 @@ func finish_raid() -> void:
 ## ghi SP vào điểm mùa của Account, sang ngày mới và autosave.
 func evaluate_day_end() -> Dictionary:
 	var ranking := ServerSim.rank_day(current_day, today_sp)
-	var chest: Dictionary = ranking.chest
+	var chest: Dictionary = ranking.chest.duplicate(true)
+	chest["items"] = chest.get("items", []) + get_outpost_income()
+	# Lưu thưởng vào nhân vật trước khi autosave: nếu tắt game khi popup còn mở
+	# thì lần sau vẫn nhận được (Main gọi take_unclaimed_rewards khi nạp).
+	SaveSystem.character_data["unclaimed_rewards"] = chest.items
 	if chest.has("title"):
 		SaveSystem.add_title(chest.title)
 	SaveSystem.commit_day_to_account(today_sp, kills_today)

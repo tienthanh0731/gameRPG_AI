@@ -3,8 +3,6 @@ extends CanvasLayer
 
 signal reroll_requested()
 
-const Minimap = preload("res://src/ui/Minimap.gd")
-
 @onready var health_label: Label = $LeftPanel/MarginContainer/VBoxContainer/HealthLabel
 @onready var health_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/HealthBar
 @onready var stamina_label: Label = $LeftPanel/MarginContainer/VBoxContainer/StaminaLabel
@@ -15,10 +13,15 @@ const Minimap = preload("res://src/ui/Minimap.gd")
 @onready var wood_label: Label = $RightPanel/MarginContainer/VBoxContainer/WoodLabel
 @onready var stone_label: Label = $RightPanel/MarginContainer/VBoxContainer/StoneLabel
 @onready var iron_label: Label = $RightPanel/MarginContainer/VBoxContainer/IronLabel
+@onready var meat_label: Label = $RightPanel/MarginContainer/VBoxContainer/MeatLabel
+@onready var bone_label: Label = $RightPanel/MarginContainer/VBoxContainer/BoneLabel
+@onready var pill_label: Label = $RightPanel/MarginContainer/VBoxContainer/PillLabel
 @onready var sp_label: Label = $RightPanel/MarginContainer/VBoxContainer/SPLabel
 @onready var talent_label: Label = $RightPanel/MarginContainer/VBoxContainer/TalentLabel
 @onready var btn_leaderboard: Button = $RightPanel/MarginContainer/VBoxContainer/BtnLeaderboard
 @onready var right_vbox: VBoxContainer = $RightPanel/MarginContainer/VBoxContainer
+@onready var btn_crafting: Button = $RightPanel/MarginContainer/VBoxContainer/BtnCrafting
+@onready var btn_map: Button = $RightPanel/MarginContainer/VBoxContainer/BtnMap
 
 @onready var day_label: Label = $TopPanel/MarginContainer/VBoxContainer/DayLabel
 @onready var biome_label: Label = $TopPanel/MarginContainer/VBoxContainer/BiomeLabel
@@ -31,12 +34,12 @@ const Minimap = preload("res://src/ui/Minimap.gd")
 @onready var day_summary_ui: Control = $DaySummaryUI
 @onready var permadeath_ui: Control = $PermadeathUI
 @onready var leaderboard_ui: Control = $LeaderboardUI
+@onready var crafting_ui: Control = $CraftingUI
+@onready var world_map_ui: Control = $WorldMapUI
 
 var hunger_label: Label
 var hunger_bar: ProgressBar
 var tide_label: Label
-var extra_inv_label: Label
-var minimap: Control
 
 func _ready() -> void:
 	day_summary_ui.visible = false
@@ -49,6 +52,10 @@ func _ready() -> void:
 	EventBus.talent_changed.connect(func(_t): update_talent_display())
 	EventBus.sp_added.connect(func(a, r): show_toast("+%d SP • %s" % [a, r], Color(1.0, 0.85, 0.3)))
 	_build_extra_widgets()
+	crafting_ui.visible = false
+	world_map_ui.visible = false
+	btn_crafting.pressed.connect(toggle_crafting)
+	btn_map.pressed.connect(toggle_map)
 	update_talent_display()
 	update_day_display(GameState.current_day)
 	_on_score_updated(GameState.today_sp, GameState.character_total_sp)
@@ -69,28 +76,10 @@ func _build_extra_widgets() -> void:
 	tide_label.add_theme_font_size_override("font_size", 13)
 	top_vbox.add_child(tide_label)
 
-	extra_inv_label = Label.new()
-	right_vbox.add_child(extra_inv_label)
-	right_vbox.move_child(extra_inv_label, btn_leaderboard.get_index())
-
 	var hint := Label.new()
-	hint.text = "[F] Ăn thịt  •  [T] Dùng Đan Reroll  •  [L] Bảng xếp hạng"
+	hint.text = "[F] Ăn • [T] Đan Reroll • [L] BXH • [I] Chế tạo • [M] Bản đồ"
 	hint.add_theme_font_size_override("font_size", 11)
 	right_vbox.add_child(hint)
-
-	minimap = Minimap.new()
-	minimap.custom_minimum_size = Vector2(150, 150)
-	minimap.size = Vector2(150, 150)
-	minimap.anchor_left = 1.0
-	minimap.anchor_right = 1.0
-	minimap.anchor_top = 1.0
-	minimap.anchor_bottom = 1.0
-	minimap.offset_left = -166
-	minimap.offset_right = -16
-	minimap.offset_top = -210
-	minimap.offset_bottom = -60
-	add_child(minimap)
-	move_child(minimap, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -130,6 +119,20 @@ func toggle_leaderboard() -> void:
 	if leaderboard_ui.visible and leaderboard_ui.has_method("refresh"):
 		leaderboard_ui.refresh()
 
+func toggle_crafting() -> void:
+	if crafting_ui:
+		if crafting_ui.has_method("toggle_ui"):
+			crafting_ui.toggle_ui()
+		else:
+			crafting_ui.visible = not crafting_ui.visible
+
+func toggle_map() -> void:
+	if world_map_ui:
+		if world_map_ui.has_method("toggle_map"):
+			world_map_ui.toggle_map()
+		else:
+			world_map_ui.visible = not world_map_ui.visible
+
 func update_tool(tool_id: int) -> void:
 	match tool_id:
 		0: tool_label.text = "[1] RÌU (chặt cây) | [2] Cuốc | [3] Kiếm | [B] Xây dựng | [E] Vào phó bản / mở cổng"
@@ -137,15 +140,18 @@ func update_tool(tool_id: int) -> void:
 		2: tool_label.text = "[3] KIẾM (chiến đấu) | [1] Rìu | [2] Cuốc | [Space] Lướt né | [B] Xây dựng"
 		3: tool_label.text = "[XÂY DỰNG] 4: Tường (4 Gỗ) | 5: Cổng (6 Gỗ, 2 Đá) | 6: Bẫy (3 Gỗ, 1 Đá) | Click đặt | [B] Thoát"
 
+func update_inventory(inv_dict: Dictionary) -> void:
+	if wood_label: wood_label.text = "🪵 Gỗ: %d" % inv_dict.get("wood", 0)
+	if stone_label: stone_label.text = "🪨 Đá: %d" % inv_dict.get("stone", 0)
+	if iron_label: iron_label.text = "⛏️ Sắt: %d" % inv_dict.get("iron", 0)
+	if meat_label: meat_label.text = "🍖 Thịt Rừng: %d" % inv_dict.get("meat", 0)
+	if bone_label: bone_label.text = "🦴 Xương / Da: %d" % inv_dict.get("bone", 0)
+	if pill_label: pill_label.text = "💊 Đan Reroll: %d" % inv_dict.get("reroll_pill", inv_dict.get("reroll_pills", 0))
+
 func update_resources(wood: int, stone: int, iron: int) -> void:
 	wood_label.text = "🪵 Gỗ: %d" % wood
 	stone_label.text = "🪨 Đá: %d" % stone
 	iron_label.text = "⛏️ Sắt: %d" % iron
-
-func update_inventory(inv: Dictionary) -> void:
-	update_resources(int(inv.get("wood", 0)), int(inv.get("stone", 0)), int(inv.get("iron", 0)))
-	extra_inv_label.text = "🍖 Thịt: %d  🦴 Da/Xương: %d  💊 Đan Reroll: %d" % [
-		inv.get("meat", 0), inv.get("bone", 0), inv.get("reroll_pill", 0)]
 
 func update_health(current: float, max_val: float) -> void:
 	health_bar.max_value = max_val
@@ -197,9 +203,8 @@ func update_phase(phase_name: String) -> void:
 		"Night": phase_label.text = "[BAN ĐÊM] THÚ TRIỀU TẤN CÔNG CĂN CỨ!"
 		"Dawn": phase_label.text = "[RẠNG ĐÔNG] Đã qua đêm"
 
-func update_minimap(player_pos: Vector2, base_pos: Vector2, dungeons: Array) -> void:
-	if minimap:
-		minimap.set_points(player_pos, base_pos, dungeons)
+func update_minimap(_player_pos: Vector2, _base_pos: Vector2, _dungeons: Array) -> void:
+	pass # Minimap (src/ui/map) tự đọc vị trí trong _process
 
 func show_toast(text: String, col: Color = Color.WHITE) -> void:
 	var lbl := Label.new()

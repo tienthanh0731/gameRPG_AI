@@ -1,0 +1,175 @@
+[gd_scene format=3 uid="uid://world_map_ui_01"]
+
+[ext_resource type="Script" path="res://src/ui/map/WorldMapUI.gd" id="1_map_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_map"]
+bg_color = Color(0.06, 0.08, 0.12, 0.96)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.6, 0.85, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_inner"]
+bg_color = Color(0.04, 0.05, 0.08, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.45, 0.6, 0.5)
+
+[node name="WorldMapUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_map_script")
+
+[node name="BackgroundDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.04, 0.8)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -260.0
+offset_right = 400.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_map")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="LabelTitle" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "✦ BẢN ĐỒ THẾ GIỚI HOANG CỔ KÝ ✦"
+horizontal_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="MapCanvas" type="PanelContainer" parent="Panel/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.6
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel_inner")
+
+[node name="VBoxBiomes" type="VBoxContainer" parent="Panel/VBox/HBox/MapCanvas"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="LabelNorth" type="Label" parent="Panel/VBox/HBox/MapCanvas/VBoxBiomes"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "❄ PHÍA BẮC: VÙNG BĂNG TUYẾT VĨNH CỬU"
+horizontal_alignment = 1
+
+[node name="LabelCenter" type="Label" parent="Panel/VBox/HBox/MapCanvas/VBoxBiomes"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 15
+text = "🌲 TRUNG TÂM: KHU RỪNG NGUYÊN SINH\n🏕️ Căn Cứ Lửa Trại  •  ⛩️ Cổng Phó Bản Cổ Động"
+horizontal_alignment = 1
+
+[node name="LabelOutpost" type="Label" parent="Panel/VBox/HBox/MapCanvas/VBoxBiomes"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 13
+text = "🏰 ĐỒN TRÚ TIỀN TIÊU (Vị trí chiến lược)"
+horizontal_alignment = 1
+
+[node name="LabelSouth" type="Label" parent="Panel/VBox/HBox/MapCanvas/VBoxBiomes"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "🏜️ PHÍA NAM: HOANG MẠC CÁT & VÙNG NÚI ĐÁ"
+horizontal_alignment = 1
+
+[node name="RightPanel" type="VBoxContainer" parent="Panel/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="LabelLocTitle" type="Label" parent="Panel/VBox/HBox/RightPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "VỊ TRÍ HIỆN TẠI:"
+
+[node name="LabelPlayerLoc" type="Label" parent="Panel/VBox/HBox/RightPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Tọa độ: (X: 0, Y: 0)"
+
+[node name="HSeparator1" type="HSeparator" parent="Panel/VBox/HBox/RightPanel"]
+layout_mode = 2
+
+[node name="LabelOutpostTitle" type="Label" parent="Panel/VBox/HBox/RightPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRUYỀN TỐNG CỨ ĐIỂM:"
+
+[node name="LabelOutpostStatus" type="Label" parent="Panel/VBox/HBox/RightPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Trạng thái: Chưa thu phục"
+autowrap_mode = 2
+
+[node name="BtnWarpOutpost" type="Button" parent="Panel/VBox/HBox/RightPanel"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "DỊCH CHUYỂN TỚI TIỀN TIÊU"
+
+[node name="BtnWarpHome" type="Button" parent="Panel/VBox/HBox/RightPanel"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "DỊCH CHUYỂN VỀ CĂN CỨ"
+
+[node name="BtnClose" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "ĐÓNG BẢN ĐỒ (PHÍM M / ESC)"

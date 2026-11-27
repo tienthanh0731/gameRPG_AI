@@ -66,6 +66,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				select_build(BuildType.DOOR)
 			elif event.keycode == KEY_6:
 				select_build(BuildType.SPIKE)
+			elif event.keycode == KEY_U:
+				_try_upgrade_structure()
 		elif event.keycode == KEY_E:
 			_try_interact_door()
 			
@@ -83,6 +85,7 @@ func toggle_building_mode() -> void:
 		select_build(BuildType.WALL)
 		if hud and hud.has_method("update_tool"):
 			hud.update_tool(3) # Building mode index
+		_spawn_hint("[U] Nâng cấp công trình dưới chuột: Gỗ→Đá (6 Đá) → Sắt (4 Đá + 4 Sắt)", Color(0.8, 0.9, 1.0))
 	else:
 		if player and player.has_signal("tool_changed"):
 			player.tool_changed.emit(player.current_tool)
@@ -180,12 +183,15 @@ func _try_place_structure() -> void:
 # ==========================================
 # LƯU / KHÔI PHỤC CĂN CỨ (thuộc tầng Character, mất khi chết)
 # ==========================================
-func _add_structure(inst: Node2D, build_type: int, pos: Vector2, hp: int) -> void:
+func _add_structure(inst: Node2D, build_type: int, pos: Vector2, hp: int, tier: int = 0) -> void:
 	inst.global_position = pos
 	inst.set_meta("build_type", build_type)
 	get_parent().add_child(inst)
+	if tier > 0 and inst.has_method("set_tier"):
+		inst.set_tier(tier, false)
 	if hp > 0 and "current_health" in inst:
-		inst.current_health = hp
+		inst.current_health = mini(hp, inst.max_health)
+		inst.queue_redraw()
 	if inst.has_signal("structure_destroyed"):
 		inst.structure_destroyed.connect(func(): EventBus.structure_destroyed.emit(pos))
 
@@ -205,13 +211,56 @@ func serialize_structures() -> Array:
 				"type": int(st.get_meta("build_type")),
 				"x": st.global_position.x, "y": st.global_position.y,
 				"hp": int(st.current_health) if "current_health" in st else -1,
+				"tier": int(st.tier) if "tier" in st else 0,
 			})
 	return out
 
 func restore_structures(list: Array) -> void:
 	for d in list:
 		var t := int(d.get("type", BuildType.WALL))
-		_add_structure(_scene_for(t).instantiate(), t, Vector2(float(d.get("x", 0)), float(d.get("y", 0))), int(d.get("hp", -1)))
+		_add_structure(_scene_for(t).instantiate(), t, Vector2(float(d.get("x", 0)), float(d.get("y", 0))), int(d.get("hp", -1)), int(d.get("tier", 0)))
+
+# ==========================================
+# NÂNG CẤP CÔNG TRÌNH (Gỗ → Đá → Sắt) — +15 SP mỗi lần
+# ==========================================
+func _structure_at(world_pos: Vector2) -> Node2D:
+	var best: Node2D = null
+	var best_d := 40.0
+	for st in get_tree().get_nodes_in_group("structure"):
+		if st is Node2D and is_instance_valid(st) and st.has_method("set_tier"):
+			var d: float = st.global_position.distance_to(world_pos)
+			if d < best_d:
+				best_d = d
+				best = st
+	return best
+
+func _try_upgrade_structure() -> void:
+	_ensure_references()
+	var mouse_pos := get_global_mouse_position()
+	var grid_pos := Vector2(round(mouse_pos.x / 64.0) * 64.0, round(mouse_pos.y / 64.0) * 64.0)
+	upgrade_structure(_structure_at(grid_pos))
+
+## Trả về true nếu nâng cấp thành công. Tách riêng để test gọi trực tiếp.
+func upgrade_structure(st: Node2D) -> bool:
+	_ensure_references()
+	if not st:
+		_spawn_hint("Không có công trình dưới chuột!", Color(1.0, 0.4, 0.4))
+		return false
+	if not st.can_upgrade():
+		_spawn_hint("%s đã ở bậc tối đa!" % st.get_display_name(), Color(1.0, 0.8, 0.3))
+		return false
+	if player and st.global_position.distance_to(player.global_position) > 240.0:
+		_spawn_hint("Công trình quá xa!", Color(1.0, 0.4, 0.4))
+		return false
+	var cost: Dictionary = st.get_upgrade_cost()
+	if not inventory or not inventory.consume_resources(int(cost.wood), int(cost.stone), int(cost.iron)):
+		_spawn_hint("Thiếu nguyên liệu: cần %d Đá, %d Sắt" % [cost.stone, cost.iron], Color(1.0, 0.3, 0.3))
+		return false
+	st.set_tier(st.tier + 1, true)
+	GameState.add_sp(15, "Nâng cấp công trình")
+	EventBus.structure_upgraded.emit(int(st.tier), st.global_position)
+	_spawn_hint("NÂNG CẤP: %s" % st.get_display_name(), Color(0.5, 0.9, 1.0))
+	return true
 
 func _try_interact_door() -> void:
 	if not player:

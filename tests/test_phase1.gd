@@ -24,6 +24,9 @@ func _ready() -> void:
 	_test_pending_talent_is_sticky()
 	_test_sp_and_day_end()
 	_test_reroll_once()
+	_test_structure_upgrade()
+	_test_daily_quests()
+	_test_outpost_income_and_unclaimed()
 	_test_permadeath_atomic()
 	_test_death_journal_recovery()
 	_test_leaderboard_paging()
@@ -194,3 +197,92 @@ func _test_leaderboard_paging() -> void:
 	for e in page.entries:
 		found = found or e.is_self
 	check(found, "jump-to-self page contains self")
+
+func _test_structure_upgrade() -> void:
+	print("structure upgrade wood -> stone -> iron")
+	var wall = load("res://src/world/structures/WoodenWall.tscn").instantiate()
+	add_child(wall)
+	var base_hp: int = wall.max_health
+	check(wall.tier == 0 and wall.can_upgrade(), "starts wood, upgradable")
+	wall.take_damage(10)
+	wall.set_tier(1, true)
+	check(wall.max_health == int(round(base_hp * 2.5)), "stone = x2.5 HP")
+	check(wall.current_health < wall.max_health, "keeps damage ratio")
+	wall.set_tier(2, true)
+	check(wall.max_health == base_hp * 5 and not wall.can_upgrade(), "iron = x5 HP, max tier")
+	check(wall.get_upgrade_cost().is_empty(), "no cost at max tier")
+	# Thông qua BuildingManager: trừ nguyên liệu + 15 SP
+	var bm = load("res://src/world/BuildingManager.gd").new()
+	add_child(bm)
+	var inv = load("res://src/core/Inventory.gd").new()
+	add_child(inv)
+	bm.inventory = inv
+	var wall2 = load("res://src/world/structures/WoodenWall.tscn").instantiate()
+	add_child(wall2)
+	check(not bm.upgrade_structure(wall2), "refused without stone")
+	inv.stone = 6
+	var sp0 = GameState.today_sp
+	check(bm.upgrade_structure(wall2), "upgrade with 6 stone")
+	check(inv.stone == 0 and wall2.tier == 1, "stone consumed, tier 1")
+	check(GameState.today_sp == sp0 + 15, "+15 SP for upgrade")
+	for n in [wall, wall2, bm, inv]:
+		n.queue_free()
+
+func _test_daily_quests() -> void:
+	print("daily quests")
+	var q1 = QuestSystem.generate("CHR_X", 5)
+	var q2 = QuestSystem.generate("CHR_X", 5)
+	check(q1.size() == 3, "3 quests/day")
+	check(q1[0].type == q2[0].type and q1[1].type == q2[1].type, "deterministic per char+day")
+	var types = {}
+	for q in q1:
+		types[q.type] = true
+	check(types.size() == 3, "distinct quest types")
+	check(not "upgrade" in QuestSystem.generate("CHR_Y", 1).map(func(q): return q.type), "no upgrade quest on day 1")
+	SaveSystem.character_data.erase("quests")
+	var today = QuestSystem.get_today_quests()
+	var q = today[0]
+	var sp0 = GameState.today_sp
+	QuestSystem.progress(q.type, q.target - 1)
+	check(not q.done and GameState.today_sp == sp0, "not done before target")
+	QuestSystem.progress(q.type, 5)
+	check(q.done and q.progress == q.target, "done at target (capped)")
+	check(GameState.today_sp == sp0 + 20, "+20 SP once")
+	QuestSystem.progress(q.type, 5)
+	check(GameState.today_sp == sp0 + 20, "no double reward")
+	# Rương thưởng không tính vào nhiệm vụ thu thập
+	SaveSystem.character_data["quests"] = { "day": GameState.current_day, "list": [
+		{ "id": "t", "type": "wood", "desc": "x", "target": 50, "progress": 0, "done": false } ] }
+	var inv = load("res://src/core/Inventory.gd").new()
+	add_child(inv)
+	GameState.granting_rewards = true
+	inv.add_resource("Gỗ", 30)
+	GameState.granting_rewards = false
+	check(QuestSystem.get_today_quests()[0].progress == 0, "chest rewards don't count")
+	inv.add_resource("Gỗ", 7)
+	check(QuestSystem.get_today_quests()[0].progress == 7, "real gathering counts")
+	inv.queue_free()
+	var old_day = GameState.current_day
+	GameState.current_day += 1
+	check(QuestSystem.get_today_quests()[0].id.begins_with("Q%d" % GameState.current_day), "new quests next day")
+	GameState.current_day = old_day
+
+func _test_outpost_income_and_unclaimed() -> void:
+	print("outpost income + unclaimed chest")
+	SaveSystem.character_data["captured_outposts"] = []
+	check(GameState.get_outpost_income().is_empty(), "no outposts → no income")
+	SaveSystem.character_data["captured_outposts"] = ["A", "B"]
+	var inc = GameState.get_outpost_income()
+	var wood = 0
+	for it in inc:
+		if it.name == "Gỗ":
+			wood = it.amount
+	check(wood == 16, "2 outposts → 16 wood")
+	GameState.add_sp(5, "t")
+	var s = GameState.evaluate_day_end()
+	var saved = SaveSystem._read_json(SaveSystem.CHARACTER_PATH)
+	check(saved.has("unclaimed_rewards") and saved.unclaimed_rewards.size() == s.chest.items.size(), "chest persisted before popup")
+	check(s.chest.items.size() >= 3, "income merged into chest")
+	var taken = GameState.take_unclaimed_rewards()
+	check(taken.size() == s.chest.items.size() and GameState.take_unclaimed_rewards().is_empty(), "claimed exactly once")
+	SaveSystem.character_data["captured_outposts"] = []

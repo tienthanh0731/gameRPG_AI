@@ -123,13 +123,13 @@ func _spawn_loot(pos: Vector2, item_name: String, amount: int) -> void:
 	item.setup(item_name, amount, tex)
 
 func _on_exit_portal_entered(body: Node2D) -> void:
-	if body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "Player" or (body is CharacterBody2D and body.get_node_or_null("Inventory") != null):
 		can_exit = true
 		exit_label.visible = true
 		exit_label.text = "[E] TRUYỀN TỐNG VỀ CĂN CỨ" if is_dungeon_cleared else "[E] RÚT LUI KHỎI PHÓ BẢN"
 
 func _on_exit_portal_exited(body: Node2D) -> void:
-	if body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "Player":
 		can_exit = false
 		exit_label.visible = false
 

@@ -31,6 +31,10 @@ signal dungeon_exited()
 signal structure_placed(struct_type: int, pos: Vector2)
 signal structure_damaged(struct_id: int, current_hp: int, max_hp: int)
 signal structure_destroyed(pos: Vector2)
+signal structure_upgraded(new_tier: int, pos: Vector2)
+signal quest_updated(quests: Array)
+signal resource_gathered(key: String, amount: int) # key: wood/stone/iron/meat/bone/reroll_pill
+signal quest_completed(quest: Dictionary)
 
 # Combat
 signal enemy_killed(enemy_type: String, is_elite: bool, pos: Vector2)

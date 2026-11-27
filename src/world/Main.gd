@@ -5,6 +5,7 @@ extends Node2D
 
 const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
 const DungeonEntranceScene = preload("res://src/dungeon/DungeonEntrance.tscn")
+const OutpostScene = preload("res://src/world/outpost/Outpost.tscn")
 
 const AUTOSAVE_INTERVAL: float = 30.0
 
@@ -20,6 +21,7 @@ var current_biome_temp: float = 28.0
 var base_pos: Vector2 = Vector2.ZERO
 var dungeon_nodes: Array[Node2D] = []
 var autosave_timer: float = 0.0
+var outpost_node: Node2D = null
 
 var tex_wood_icon: Texture2D
 var tex_stone_icon: Texture2D
@@ -87,6 +89,17 @@ func _ready() -> void:
 		campfire.body_entered.connect(_on_campfire_entered)
 		campfire.body_exited.connect(_on_campfire_exited)
 
+	# Rương cuối ngày chưa nhận (lần trước tắt game khi popup đang mở)
+	var leftover := GameState.take_unclaimed_rewards()
+	if not leftover.is_empty() and player:
+		var inv_node = player.get_node("Inventory")
+		GameState.granting_rewards = true
+		for it in leftover:
+			inv_node.add_resource(str(it.get("name", "")), int(it.get("amount", 1)))
+		GameState.granting_rewards = false
+		if hud and hud.has_method("show_toast"):
+			hud.show_toast("Đã nhận rương thưởng cuối ngày còn tồn", Color(1, 0.85, 0.3))
+
 	EventBus.day_started.connect(func(_d): _spawn_today_dungeons())
 	EventBus.dungeon_entered.connect(func(_n): save_world())
 	if hud and hud.has_signal("reroll_requested"):
@@ -103,6 +116,31 @@ func _place_base(spawn_pos: Vector2) -> void:
 			player.global_position = Vector2(float(c.pos_x), float(c.pos_y))
 		else:
 			player.global_position = spawn_pos
+	_spawn_outpost(spawn_pos)
+
+## Cứ điểm Truyền Tống (module của agy). Trạng thái chiếm được lưu trong nhân vật
+## để thoát game / vào phó bản không chiếm lại được (tránh cày +25 SP).
+func _spawn_outpost(spawn_pos: Vector2) -> void:
+	if outpost_node:
+		return
+	outpost_node = OutpostScene.instantiate()
+	outpost_node.name = "Outpost"
+	outpost_node.global_position = spawn_pos + Vector2(-340, 220)
+	add_child(outpost_node)
+	var captured: Array = SaveSystem.character_data.get("captured_outposts", [])
+	if outpost_node.outpost_name in captured and outpost_node.has_method("restore_captured"):
+		outpost_node.restore_captured()
+	outpost_node.outpost_captured.connect(_on_outpost_captured)
+
+func _on_outpost_captured(outpost_name: String, _pos: Vector2) -> void:
+	var c := SaveSystem.character_data
+	var captured: Array = c.get("captured_outposts", [])
+	if not outpost_name in captured:
+		captured.append(outpost_name)
+	c["captured_outposts"] = captured
+	c["outposts"] = captured.size() # BXH Lãnh Thổ
+	save_world()
+
 
 func _process(delta: float) -> void:
 	if GameState.is_dead:

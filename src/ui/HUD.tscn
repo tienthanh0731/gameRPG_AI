@@ -4,9 +4,12 @@
 [ext_resource type="PackedScene" uid="uid://day_summary_ui_01" path="res://src/ui/DaySummaryUI.tscn" id="2_summary_scene"]
 [ext_resource type="PackedScene" uid="uid://permadeath_ui_01" path="res://src/ui/PermadeathUI.tscn" id="3_permadeath_scene"]
 [ext_resource type="PackedScene" uid="uid://leaderboard_ui_01" path="res://src/ui/LeaderboardUI.tscn" id="4_leaderboard_scene"]
+[ext_resource type="PackedScene" path="res://src/ui/crafting/CraftingUI.tscn" id="5_crafting_scene"]
+[ext_resource type="PackedScene" path="res://src/ui/map/WorldMapUI.tscn" id="6_map_scene"]
+[ext_resource type="Script" path="res://src/ui/map/Minimap.gd" id="7_minimap_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.08, 0.08, 0.1, 0.85)
+bg_color = Color(0.08, 0.08, 0.1, 0.88)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -97,14 +100,26 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Thân nhiệt: 37.0°C"
 
+[node name="Minimap" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -146.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 146.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("7_minimap_script")
+
 [node name="RightPanel" type="PanelContainer" parent="."]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -260.0
-offset_top = 16.0
+offset_top = 156.0
 offset_right = -16.0
-offset_bottom = 210.0
+offset_bottom = 450.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -151,10 +166,42 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "⛏️ Sắt: 0"
 
-[node name="BtnLeaderboard" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 28)
+[node name="MeatLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(1, 0.5, 0.5, 1)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "🍖 Thịt Rừng: 0"
+
+[node name="BoneLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(0.9, 0.9, 0.9, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🦴 Xương / Da: 0"
+
+[node name="PillLabel" type="Label" parent="RightPanel/MarginContainer/VBoxContainer"]
+modulate = Color(0.4, 1, 0.6, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "💊 Đan Reroll: 0"
+
+[node name="BtnCrafting" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "🛠️ CHẾ TẠO [PHÍM I]"
+
+[node name="BtnMap" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "🗺️ BẢN ĐỒ [PHÍM M]"
+
+[node name="BtnLeaderboard" type="Button" parent="RightPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_font_sizes/font_size = 12
 text = "🏆 BẢNG XẾP HẠNG"
 
@@ -213,9 +260,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -320.0
+offset_left = -380.0
 offset_top = -45.0
-offset_right = 320.0
+offset_right = 380.0
 offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -224,7 +271,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 [node name="ToolLabel" type="Label" parent="BottomPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "[Phím 1] RÌU ĐỐN CỦI  |  [Phím 2] CUỐC ĐÀO MỎ  |  [Phím 3] KIẾM  |  [Phím B] XÂY DỰNG"
+text = "[1] RÌU  |  [2] CUỐC  |  [3] KIẾM  |  [B] XÂY DỰNG  |  [I] CHẾ TẠO  |  [M] BẢN ĐỒ"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -235,4 +282,10 @@ visible = false
 visible = false
 
 [node name="LeaderboardUI" parent="." instance=ExtResource("4_leaderboard_scene")]
+visible = false
+
+[node name="CraftingUI" parent="." instance=ExtResource("5_crafting_scene")]
+visible = false
+
+[node name="WorldMapUI" parent="." instance=ExtResource("6_map_scene")]
 visible = false
