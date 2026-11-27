@@ -1,69 +1,123 @@
-[gd_scene load_steps=2 format=3 uid="uid://chud01scene"]
+[gd_scene load_steps=3 format=3 uid="uid://chud01scene"]
 
 [ext_resource type="Script" path="res://src/ui/HUD.gd" id="1_hud_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.08, 0.1, 0.75)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud_script")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-offset_left = 20.0
-offset_top = 20.0
+[node name="LeftPanel" type="PanelContainer" parent="."]
+offset_left = 16.0
+offset_top = 16.0
 offset_right = 260.0
-offset_bottom = 120.0
+offset_bottom = 150.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="LeftPanel"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
-[node name="HealthLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="LeftPanel/MarginContainer"]
 layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HealthLabel" type="Label" parent="LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
 text = "Máu (HP):"
 
-[node name="HealthBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+[node name="HealthBar" type="ProgressBar" parent="LeftPanel/MarginContainer/VBoxContainer"]
 modulate = Color(0.9, 0.2, 0.2, 1)
-custom_minimum_size = Vector2(0, 16)
-layout_mode = 2
-value = 100.0
-show_percentage = false
-
-[node name="StaminaLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Thể lực (Stamina):"
-
-[node name="StaminaBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
-modulate = Color(0.2, 0.8, 0.3, 1)
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 value = 100.0
 show_percentage = false
 
-[node name="TempLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="StaminaLabel" type="Label" parent="LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Thể lực (Stamina):"
+
+[node name="StaminaBar" type="ProgressBar" parent="LeftPanel/MarginContainer/VBoxContainer"]
+modulate = Color(0.2, 0.85, 0.35, 1)
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="TempLabel" type="Label" parent="LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "Thân nhiệt: 37.0°C"
 
-[node name="TopContainer" type="VBoxContainer" parent="."]
+[node name="TopPanel" type="PanelContainer" parent="."]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
-offset_top = 15.0
-offset_right = 200.0
+offset_left = -180.0
+offset_top = 12.0
+offset_right = 180.0
 offset_bottom = 95.0
 grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="BiomeLabel" type="Label" parent="TopContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TopPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="BiomeLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
 modulate = Color(0.5, 0.9, 1, 1)
 layout_mode = 2
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
 text = "Địa hình: Khu Rừng Nguyên Sinh"
-
-[node name="TimeLabel" type="Label" parent="TopContainer"]
-layout_mode = 2
 horizontal_alignment = 1
-text = "Thời gian: 08:00"
 
-[node name="PhaseLabel" type="Label" parent="TopContainer"]
+[node name="TimeLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Thời gian: 08:00"
+horizontal_alignment = 1
+
+[node name="PhaseLabel" type="Label" parent="TopPanel/MarginContainer/VBoxContainer"]
 modulate = Color(1, 0.85, 0.3, 1)
 layout_mode = 2
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
 text = "[BAN NGÀY] Khám phá & Thu thập"
+horizontal_alignment = 1
+
+[node name="BottomPanel" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -45.0
+offset_right = 260.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="ToolLabel" type="Label" parent="BottomPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "[Phím 1] RÌU ĐỐN CỦI  |  [Phím 2] CUỐC ĐÀO MỎ  |  [Phím 3] KIẾM CHIẾN ĐẤU"
+horizontal_alignment = 1
+vertical_alignment = 1

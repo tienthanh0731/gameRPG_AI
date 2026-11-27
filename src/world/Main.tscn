@@ -11,12 +11,13 @@
 radius = 60.0
 
 [node name="Main" type="Node2D"]
+y_sort_enabled = true
 script = ExtResource("1_main_script")
 
 [node name="MapGenerator" type="Node2D" parent="."]
 script = ExtResource("2_map_gen")
-map_width = 100
-map_height = 100
+map_width = 80
+map_height = 80
 tile_size = 64
 
 [node name="TerrainTiles" type="Node2D" parent="MapGenerator"]
@@ -25,15 +26,18 @@ tile_size = 64
 y_sort_enabled = true
 
 [node name="Campfire" type="Area2D" parent="."]
+y_sort_enabled = true
 position = Vector2(80, 0)
 collision_layer = 4
 collision_mask = 2
 
 [node name="Sprite2D" type="Sprite2D" parent="Campfire"]
 texture = ExtResource("6_fire_tex")
+offset = Vector2(0, -8)
 hframes = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Campfire"]
+position = Vector2(0, -4)
 shape = SubResource("CircleShape2D_fire")
 
 [node name="PointLight2D" type="PointLight2D" parent="Campfire"]
@@ -41,7 +45,7 @@ color = Color(1, 0.65, 0.3, 1)
 energy = 1.5
 texture_scale = 2.0
 
-[node name="Player" parent="." instance=ExtResource("4_player_scene")]
+[node name="Player" parent="." groups=["player"] instance=ExtResource("4_player_scene")]
 position = Vector2(0, 0)
 
 [node name="DayNightCycle" type="CanvasModulate" parent="."]
