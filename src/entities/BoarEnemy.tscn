@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://cboarenemy01"]
+
+[ext_resource type="Script" path="res://src/entities/BoarEnemy.gd" id="1_boar_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/boar/BoarIdle-Sheet.png" id="2_boar_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boar"]
+radius = 16.0
+
+[node name="BoarEnemy" type="CharacterBody2D" groups=["enemy"]]
+y_sort_enabled = true
+collision_layer = 4
+collision_mask = 7
+script = ExtResource("1_boar_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_boar_tex")
+offset = Vector2(0, -12)
+hframes = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_boar")

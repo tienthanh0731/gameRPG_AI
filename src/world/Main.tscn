@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://cmain01worldscene"]
+[gd_scene load_steps=13 format=3 uid="uid://cmain01worldscene"]
 
 [ext_resource type="Script" path="res://src/world/Main.gd" id="1_main_script"]
 [ext_resource type="Script" path="res://src/world/MapGenerator.gd" id="2_map_gen"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://src/ui/HUD.tscn" id="5_hud_scene"]
 [ext_resource type="Texture2D" path="res://assets/buildings/campfire_and_furnace/CampFire-Sheet.png" id="6_fire_tex"]
 [ext_resource type="Script" path="res://src/world/Campfire.gd" id="7_campfire_script"]
+[ext_resource type="Script" path="res://src/world/BuildingManager.gd" id="8_build_mgr"]
+[ext_resource type="Script" path="res://src/world/RaidManager.gd" id="9_raid_mgr"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_fire"]
 radius = 60.0
@@ -33,6 +35,8 @@ map_height = 80
 tile_size = 64
 
 [node name="TerrainTiles" type="Node2D" parent="MapGenerator"]
+z_index = -10
+z_as_relative = false
 
 [node name="PropsLayer" type="Node2D" parent="MapGenerator"]
 y_sort_enabled = true
@@ -61,6 +65,12 @@ texture_scale = 2.2
 
 [node name="Player" parent="." groups=["player"] instance=ExtResource("4_player_scene")]
 position = Vector2(0, 0)
+
+[node name="BuildingManager" type="Node2D" parent="."]
+script = ExtResource("8_build_mgr")
+
+[node name="RaidManager" type="Node2D" parent="."]
+script = ExtResource("9_raid_mgr")
 
 [node name="DayNightCycle" type="CanvasModulate" parent="."]
 script = ExtResource("3_day_night")

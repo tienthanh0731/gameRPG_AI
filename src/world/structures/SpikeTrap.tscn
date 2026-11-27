@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3 uid="uid://cspiketrap01"]
+
+[ext_resource type="Script" path="res://src/world/Structure.gd" id="1_struct_script"]
+[ext_resource type="Texture2D" path="res://assets/buildings/structures/spike_trap.png" id="2_spike_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spike"]
+size = Vector2(52, 44)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_trap"]
+radius = 28.0
+
+[node name="SpikeTrap" type="StaticBody2D" groups=["structure", "trap"]]
+y_sort_enabled = true
+collision_layer = 1
+collision_mask = 4
+script = ExtResource("1_struct_script")
+structure_type = 2
+structure_name = "Hàng Rào Chông"
+max_health = 35
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_spike_tex")
+offset = Vector2(0, -12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -6)
+shape = SubResource("RectangleShape2D_spike")
+
+[node name="TrapArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TrapArea"]
+position = Vector2(0, -6)
+shape = SubResource("CircleShape2D_trap")

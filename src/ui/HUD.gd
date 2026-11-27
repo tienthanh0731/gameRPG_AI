@@ -1,6 +1,8 @@
 extends CanvasLayer
 
+@onready var health_label: Label = $LeftPanel/MarginContainer/VBoxContainer/HealthLabel
 @onready var health_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/HealthBar
+@onready var stamina_label: Label = $LeftPanel/MarginContainer/VBoxContainer/StaminaLabel
 @onready var stamina_bar: ProgressBar = $LeftPanel/MarginContainer/VBoxContainer/StaminaBar
 @onready var temp_label: Label = $LeftPanel/MarginContainer/VBoxContainer/TempLabel
 
@@ -17,9 +19,10 @@ extends CanvasLayer
 func update_tool(tool_id: int) -> void:
 	if tool_label:
 		match tool_id:
-			0: tool_label.text = "[Phím 1] Đang cầm: RÌU ĐỐN CỦI (Click chuột trái để chặt cây)"
-			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột trái để đập đá)"
-			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột trái để chém)"
+			0: tool_label.text = "[Phím 1] Đang cầm: RÌU ĐỐN CỦI (Click chuột để chặt) | [Phím B] Xây dựng"
+			1: tool_label.text = "[Phím 2] Đang cầm: CUỐC ĐÀO MỎ (Click chuột để đập đá) | [Phím B] Xây dựng"
+			2: tool_label.text = "[Phím 3] Đang cầm: KIẾM CHIẾN ĐẤU (Click chuột để chém) | [Phím B] Xây dựng"
+			3: tool_label.text = "[CHẾ ĐỘ XÂY DỰNG] Phím 4: Tường (4 Gỗ) | Phím 5: Cổng (6 Gỗ) | Phím 6: Bẫy (3 Gỗ) | [B] Thoát"
 
 func update_resources(wood: int, stone: int, iron: int) -> void:
 	if wood_label:
@@ -33,11 +36,15 @@ func update_health(current: float, max_val: float) -> void:
 	if health_bar:
 		health_bar.max_value = max_val
 		health_bar.value = current
+	if health_label:
+		health_label.text = "Máu (HP): %d / %d" % [int(current), int(max_val)]
 
 func update_stamina(current: float, max_val: float) -> void:
 	if stamina_bar:
 		stamina_bar.max_value = max_val
 		stamina_bar.value = current
+	if stamina_label:
+		stamina_label.text = "Thể lực: %d / %d" % [int(current), int(max_val)]
 
 func update_temperature(temp: float) -> void:
 	if temp_label:

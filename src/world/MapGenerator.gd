@@ -34,6 +34,7 @@ var tex_sand: Texture2D
 var tex_grass: Texture2D
 var tex_stone: Texture2D
 var tex_snow: Texture2D
+var tex_swamp: Texture2D
 
 var tex_trees: Array[Texture2D] = []
 var tex_stumps: Array[Texture2D] = []
@@ -44,6 +45,9 @@ var spawn_location: Vector2 = Vector2.ZERO
 var current_player_biome: BiomeType = BiomeType.FOREST
 
 func _ready() -> void:
+	if terrain_layer:
+		terrain_layer.z_index = -10
+		terrain_layer.z_as_relative = false
 	if props_layer:
 		props_layer.y_sort_enabled = true
 	_init_textures()
@@ -51,11 +55,12 @@ func _ready() -> void:
 	generate_world()
 
 func _init_textures() -> void:
-	tex_grass = load("res://assets/map/forest_cainos/TX Tileset Grass.png")
-	tex_stone = load("res://assets/map/forest_cainos/TX Tileset Stone Ground.png")
-	tex_sand = load("res://assets/map/tiny_terrain/Tileset/Tilemap_color3.png")
-	tex_water = load("res://assets/map/tiny_terrain/Tileset/Water Background color.png")
-	tex_snow = load("res://assets/map/tiny_terrain/Tileset/Tilemap_color5.png")
+	tex_grass = load("res://assets/map/tiles/tile_grass.png")
+	tex_stone = load("res://assets/map/tiles/tile_stone.png")
+	tex_sand = load("res://assets/map/tiles/tile_sand.png")
+	tex_water = load("res://assets/map/tiles/tile_water.png")
+	tex_snow = load("res://assets/map/tiles/tile_snow.png")
+	tex_swamp = load("res://assets/map/tiles/tile_swamp.png")
 
 	# Load Trees
 	for i in range(1, 5):
@@ -162,27 +167,31 @@ func _create_tile_sprite(pos: Vector2, biome: BiomeType) -> void:
 	var sprite = Sprite2D.new()
 	sprite.position = pos
 	sprite.centered = true
-	sprite.scale = Vector2(float(tile_size) / 64.0, float(tile_size) / 64.0)
+	sprite.z_index = -10
+	sprite.z_as_relative = false
 
 	match biome:
-		BiomeType.OCEAN, BiomeType.RIVER:
-			sprite.texture = tex_water if tex_water else tex_stone
-			sprite.modulate = Color(0.2, 0.45, 0.85) if biome == BiomeType.OCEAN else Color(0.3, 0.6, 0.95)
+		BiomeType.OCEAN:
+			sprite.texture = tex_water
+			sprite.modulate = Color(0.35, 0.55, 0.95)
+		BiomeType.RIVER:
+			sprite.texture = tex_water
+			sprite.modulate = Color(0.55, 0.75, 1.0)
 		BiomeType.BEACH:
-			sprite.texture = tex_sand if tex_sand else tex_grass
-			sprite.modulate = Color(0.95, 0.85, 0.5)
+			sprite.texture = tex_sand
+			sprite.modulate = Color.WHITE
 		BiomeType.FOREST:
 			sprite.texture = tex_grass
-			sprite.modulate = Color(0.4, 0.8, 0.35)
+			sprite.modulate = Color.WHITE
 		BiomeType.SWAMP:
-			sprite.texture = tex_grass
-			sprite.modulate = Color(0.35, 0.45, 0.3)
+			sprite.texture = tex_swamp
+			sprite.modulate = Color.WHITE
 		BiomeType.MOUNTAIN:
 			sprite.texture = tex_stone
-			sprite.modulate = Color(0.65, 0.65, 0.65)
+			sprite.modulate = Color.WHITE
 		BiomeType.SNOW_TUNDRA:
-			sprite.texture = tex_snow if tex_snow else tex_stone
-			sprite.modulate = Color(0.92, 0.95, 1.0)
+			sprite.texture = tex_snow
+			sprite.modulate = Color.WHITE
 
 	terrain_layer.add_child(sprite)
 

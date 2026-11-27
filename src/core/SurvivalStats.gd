@@ -16,15 +16,24 @@ signal player_died()
 @export var stamina_regen_rate: float = 15.0
 
 @export var hunger: float = 100.0
-@export var hunger_decay_rate: float = 0.5
+@export var hunger_decay_rate: float = 0.1
 
 @export var thirst: float = 100.0
-@export var thirst_decay_rate: float = 0.8
+@export var thirst_decay_rate: float = 0.15
 
 @export var body_temperature: float = 37.0
 @export var target_temperature: float = 37.0
 
 var is_near_fire: bool = false
+
+func _ready() -> void:
+	current_health = max_health
+	current_stamina = max_stamina
+	body_temperature = 37.0
+	target_temperature = 37.0
+	health_changed.emit(current_health, max_health)
+	stamina_changed.emit(current_stamina, max_stamina)
+	temperature_changed.emit(body_temperature)
 
 func _process(delta: float) -> void:
 	_update_needs(delta)
@@ -39,18 +48,20 @@ func _update_needs(delta: float) -> void:
 	
 	if hunger <= 0.0 or thirst <= 0.0:
 		take_damage(2.0 * delta)
+	elif current_health < max_health and hunger > 50.0 and thirst > 50.0 and body_temperature >= 35.0:
+		# Passive health recovery when well-fed and warm
+		current_health = min(max_health, current_health + 1.2 * delta)
+		health_changed.emit(current_health, max_health)
 
 func _update_temperature(delta: float) -> void:
-	if is_near_fire:
-		target_temperature = 37.2
-	
-	body_temperature = move_toward(body_temperature, target_temperature, 0.2 * delta)
+	var rate = 1.2 if is_near_fire else 0.05
+	body_temperature = move_toward(body_temperature, target_temperature, rate * delta)
 	temperature_changed.emit(body_temperature)
 	
-	if body_temperature < 32.0:
-		take_damage(3.0 * delta)
-	elif body_temperature > 39.0:
-		take_damage(2.0 * delta)
+	if body_temperature < 30.0:
+		take_damage(1.5 * delta)
+	elif body_temperature > 39.5:
+		take_damage(1.5 * delta)
 
 func _update_stamina(delta: float) -> void:
 	if current_stamina < max_stamina:
@@ -70,3 +81,18 @@ func take_damage(amount: float) -> void:
 	health_changed.emit(current_health, max_health)
 	if current_health <= 0.0:
 		player_died.emit()
+
+func heal(amount: float) -> void:
+	current_health = min(max_health, current_health + amount)
+	health_changed.emit(current_health, max_health)
+
+func respawn() -> void:
+	current_health = max_health
+	current_stamina = max_stamina
+	body_temperature = 37.0
+	target_temperature = 37.0
+	hunger = 90.0
+	thirst = 90.0
+	health_changed.emit(current_health, max_health)
+	stamina_changed.emit(current_stamina, max_stamina)
+	temperature_changed.emit(body_temperature)

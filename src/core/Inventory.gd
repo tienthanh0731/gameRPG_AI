@@ -6,6 +6,8 @@ signal item_collected(item_name: String, amount: int)
 @export var wood: int = 0
 @export var stone: int = 0
 @export var iron: int = 0
+@export var meat: int = 0
+@export var bone: int = 0
 
 func add_resource(item_name: String, amount: int) -> void:
 	match item_name:
@@ -15,6 +17,10 @@ func add_resource(item_name: String, amount: int) -> void:
 			stone += amount
 		"Quặng Sắt":
 			iron += amount
+		"Thịt Rừng":
+			meat += amount
+		"Xương Thú", "Da Thú":
+			bone += amount
 	resources_updated.emit(wood, stone, iron)
 	item_collected.emit(item_name, amount)
 

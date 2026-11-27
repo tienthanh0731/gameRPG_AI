@@ -127,6 +127,12 @@ func _trigger_action() -> void:
 	if state != PlayerState.IDLE and state != PlayerState.WALK:
 		return
 
+	var parent_node = get_parent()
+	if parent_node:
+		var bm = parent_node.get_node_or_null("BuildingManager")
+		if bm and bm.get("is_building") == true:
+			return
+
 	var mouse_p = get_global_mouse_position()
 	sprite.flip_h = mouse_p.x < global_position.x
 
