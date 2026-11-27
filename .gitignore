@@ -21,3 +21,7 @@ build/
 bin/
 export/
 *.tmp
+
+# External tools & helper repos
+.external_tools/
+
