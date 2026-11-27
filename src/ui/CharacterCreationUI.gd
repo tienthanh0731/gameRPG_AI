@@ -165,6 +165,12 @@ func _toggle_profile() -> void:
 		acc.get("total_monsters_killed", 0), ", ".join(acc.get("titles", [])),
 		"(chưa mở khóa)" if acc.get("cosmetics", []).is_empty() else ", ".join(acc.get("cosmetics", []))]
 	vb.add_child(info)
+	var season_info := Label.new()
+	var sh: Array = acc.get("season_history", [])
+	season_info.text = "Mùa giải %d • Kỷ lục mùa: %d ngày • Cấp Tái Sinh: %d (x%.2f tăng trưởng) • Mùa trước: %s" % [
+		SeasonSystem.season_id(), acc.get("season_best_day", 0), SeasonSystem.prestige_level(),
+		SeasonSystem.growth_mult(), ("Mùa %d — %d điểm" % [sh[0].season, sh[0].season_sp]) if not sh.is_empty() else "chưa có"]
+	vb.add_child(season_info)
 	var hist := ItemList.new()
 	hist.custom_minimum_size = Vector2(600, 300)
 	var logs: Array = acc.get("history_logs", [])
@@ -173,7 +179,8 @@ func _toggle_profile() -> void:
 	for l in logs:
 		hist.add_item("%s  |  %s  |  %d ngày  |  %d SP  |  [%s] %s%s" % [
 			l.get("date", ""), l.get("char_name", ""), l.get("day_survived", 0), l.get("sp_earned", 0),
-			l.get("talent_rank", "F"), l.get("talent_name", ""), "  ★KỶ LỤC" if l.get("record", false) else ""])
+			l.get("talent_rank", "F"), l.get("talent_name", ""),
+			("  ★KỶ LỤC" if l.get("record", false) else "") + ("  ♻TÁI SINH" if l.get("reason", "") == "prestige" else "")])
 	vb.add_child(hist)
 	var close := Button.new()
 	close.text = "Đóng"

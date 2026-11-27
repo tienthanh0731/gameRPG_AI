@@ -29,8 +29,11 @@ func _ready() -> void:
 	_test_sub_talent_and_enlightenment()
 	_test_daily_quests()
 	_test_outpost_income_and_unclaimed()
+	_test_season_pass_and_weekly()
+	_test_season_rollover()
 	_test_permadeath_atomic()
 	_test_death_journal_recovery()
+	_test_prestige()
 	_test_leaderboard_paging()
 	_restore()
 	print("\n=== Phase 1 tests: %d passed, %d failed ===" % [passes, failures])
@@ -383,3 +386,83 @@ func _test_sub_talent_and_enlightenment() -> void:
 	GameState.current_day = old_day
 	GameState.sub_talent = {}
 	c.erase("sub_talent")
+
+func _test_season_pass_and_weekly() -> void:
+	print("season pass + weekly quests")
+	var S = SeasonSystem
+	var t0 = S.WEEK_EPOCH + 10 * S.WEEK_SECONDS + 3600 # tuần 10
+	S.now_override = t0
+	check(S.week_id() == 10 and S.season_id() == 3 and S.week_in_season() == 3, "week/season ids")
+	check(S.seconds_left_in_season() > 0 and S.seconds_left_in_season() <= 2 * S.WEEK_SECONDS, "time left in season")
+	var acc = SaveSystem.account_data
+	acc["season_sp"] = 0
+	acc["pass_claimed"] = []
+	check(S.pass_tier() == 0 and not S.can_claim(1), "no tier at 0 points")
+	acc["season_sp"] = 2 * S.PASS_POINTS_PER_TIER
+	check(S.pass_tier() == 2 and S.can_claim(1) and S.can_claim(2) and not S.can_claim(3), "2 tiers unlocked")
+	var inv = load("res://src/core/Inventory.gd").new()
+	add_child(inv)
+	var w0 = inv.wood
+	check(S.claim(1, inv) and inv.wood == w0 + 20, "tier 1 gives 20 wood")
+	check(not S.claim(1, inv), "cannot claim twice")
+	check(S.claim(2, null), "title tier claimable without inventory")
+	check(("Kẻ Khai Hoang Mùa %d" % S.season_id()) in acc.titles, "season title added")
+	inv.queue_free()
+	# Nhiệm vụ tuần: gắn Account, cùng tuần thì giữ nguyên
+	acc.erase("weekly_quests")
+	var wq = QuestSystem.get_weekly_quests()
+	check(wq.size() == 3, "3 weekly quests")
+	check(QuestSystem.get_weekly_quests()[0].id == wq[0].id, "stable within week")
+	var q = wq[0]
+	var sp0 = int(acc.season_sp)
+	QuestSystem.progress_weekly(q.type, q.target)
+	check(q.done and int(acc.season_sp) == sp0 + QuestSystem.WEEKLY_SEASON_POINTS, "weekly done → +season points")
+	S.now_override = t0 + S.WEEK_SECONDS
+	check(QuestSystem.get_weekly_quests()[0].id.begins_with("W11"), "new weekly quests next week")
+	S.now_override = 0
+
+func _test_season_rollover() -> void:
+	print("season rollover")
+	var S = SeasonSystem
+	var acc = SaveSystem.account_data
+	var c = SaveSystem.character_data
+	var t0 = S.WEEK_EPOCH + 10 * S.WEEK_SECONDS + 60
+	S.now_override = t0
+	acc["season_id"] = S.season_id()
+	acc["week_id"] = S.week_id()
+	acc["season_sp"] = 777
+	acc["season_best_day"] = 9
+	c["structures"] = [{ "type": 1, "x": 0, "y": 0 }]
+	c["captured_outposts"] = ["A"]
+	var seed0 = c.world_seed
+	var talent0 = c.talent.id
+	S.now_override = t0 + 2 * S.WEEK_SECONDS # sang mùa 4
+	S.check_rollover()
+	check(int(acc.season_id) == 4 and int(acc.season_sp) == 0 and int(acc.season_best_day) == 0, "season stats reset")
+	check(acc.season_history[0].season == 3 and acc.season_history[0].season_sp == 777, "old season archived")
+	check(c.world_seed != seed0 and not c.has("structures") and not c.has("captured_outposts"), "new map for living character")
+	check(c.talent.id == talent0, "talent kept across season")
+	S.check_rollover()
+	check(acc.season_history.size() >= 1 and acc.season_history[0].season == 3, "rollover idempotent")
+	S.now_override = 0
+	acc["season_id"] = S.season_id()
+	acc["week_id"] = S.week_id()
+
+func _test_prestige() -> void:
+	print("prestige (Tái Sinh)")
+	var S = SeasonSystem
+	ServerSim.get_or_roll_pending_talent()
+	SaveSystem.create_new_character("Prestiger", ServerSim.consume_pending_talent())
+	GameState.load_from_character()
+	var lvl0 = S.prestige_level()
+	GameState.current_day = 5
+	check(S.can_prestige() != "" and S.prestige().is_empty(), "refused before day 10")
+	GameState.current_day = 12
+	var g0 = S.growth_mult()
+	var r = S.prestige()
+	check(r.get("reason") == "prestige", "prestige summary")
+	check(S.prestige_level() == lvl0 + 1 and S.growth_mult() > g0, "prestige level up → faster growth")
+	check(not SaveSystem.has_active_character() and not FileAccess.file_exists(SaveSystem.CHARACTER_PATH), "character retired atomically")
+	check(SaveSystem.account_data.history_logs[0].reason == "prestige", "logged as prestige, not death")
+	check(int(SaveSystem.account_data.season_best_day) >= 12, "season best day updated")
+	SaveSystem.account_data["prestige_level"] = lvl0

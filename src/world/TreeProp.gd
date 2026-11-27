@@ -1,4 +1,5 @@
 extends StaticBody2D
+const EquipmentData = preload("res://src/data/EquipmentData.gd") # preload: không phụ thuộc cache class_name
 
 signal tree_chopped(wood_amount: int, drop_pos: Vector2)
 

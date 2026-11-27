@@ -1,4 +1,5 @@
 extends CharacterBody2D
+const EquipmentData = preload("res://src/data/EquipmentData.gd") # preload: không phụ thuộc cache class_name
 
 signal tool_changed(tool_mode: int)
 ## Phát khi độ bền / bậc trang bị thay đổi. equipment = {axe, pickaxe, sword}

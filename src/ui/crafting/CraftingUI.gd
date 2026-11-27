@@ -1,4 +1,5 @@
 extends Control
+const EquipmentData = preload("res://src/data/EquipmentData.gd") # preload: không phụ thuộc cache class_name
 
 const CraftingCatalog = preload("res://src/ui/crafting/CraftingCatalog.gd")
 

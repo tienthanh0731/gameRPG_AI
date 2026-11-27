@@ -221,7 +221,7 @@ func build_board(board: int) -> Array:
 			for i in SIM_POPULATION:
 				var d := int(clamp(rng.randfn(9.0, 7.0), 1, 60))
 				entries.append({ "name": _bot_name(rng), "value": d, "badge": "[%s]" % _bot_rank_str(rng) })
-			var best := int(acc.get("highest_day_record", 0))
+			var best := int(acc.get("season_best_day", 0))
 			if alive:
 				best = maxi(best, int(ch.get("day", 1)))
 			self_entry = { "name": my_name, "value": best, "badge": "Bản thân" }

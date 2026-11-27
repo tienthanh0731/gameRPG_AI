@@ -1,4 +1,5 @@
 extends CanvasLayer
+const EquipmentData = preload("res://src/data/EquipmentData.gd") # preload: không phụ thuộc cache class_name
 ## HUD — chỉ hiển thị. Nhận dữ liệu từ Main (call down) và EventBus.
 
 signal reroll_requested()
@@ -77,7 +78,7 @@ func _build_extra_widgets() -> void:
 	top_vbox.add_child(tide_label)
 
 	var hint := Label.new()
-	hint.text = "[F] Ăn • [T] Đan Reroll • [K] Thiên phú • [L] BXH • [I] Chế tạo • [M] Bản đồ"
+	hint.text = "[F] Ăn • [T] Đan Reroll • [K] Thiên phú • [P] Mùa giải • [L] BXH • [I] Chế tạo • [M] Bản đồ"
 	hint.add_theme_font_size_override("font_size", 11)
 	right_vbox.add_child(hint)
 

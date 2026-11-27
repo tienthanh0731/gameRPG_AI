@@ -1,4 +1,5 @@
 extends Node
+const EquipmentData = preload("res://src/data/EquipmentData.gd") # preload: không phụ thuộc cache class_name
 ## GameState — trạng thái phiên chơi của nhân vật hiện tại + các công thức gameplay.
 ## Logic thuần (không UI). UI chỉ nghe EventBus.
 
@@ -141,7 +142,7 @@ func get_player_damage_mult() -> float:
 	return talent_stat("dmg_mult", 1.0)
 
 func get_gather_mult() -> float:
-	return talent_stat("gather_mult", 1.0)
+	return talent_stat("gather_mult", 1.0) * SeasonSystem.growth_mult()
 
 ## Thiên phú tăng máu công trình: Thổ Bá +100%, Hoang Cổ Bá Chủ +200%.
 func get_structure_hp_mult() -> float:
@@ -337,6 +338,16 @@ func evaluate_day_end() -> Dictionary:
 	var ranking := ServerSim.rank_day(current_day, today_sp)
 	var chest: Dictionary = ranking.chest.duplicate(true)
 	chest["items"] = chest.get("items", []) + get_outpost_income()
+	# Tái Sinh: rương cuối ngày nhiều hơn theo hệ số tăng trưởng
+	var g := SeasonSystem.growth_mult()
+	if g > 1.0:
+		var scaled: Array = []
+		for it in chest.items:
+			var n: Dictionary = it.duplicate()
+			if n.name != "Đan Reroll Thiên Phú":
+				n["amount"] = int(round(int(n.amount) * g))
+			scaled.append(n)
+		chest["items"] = scaled
 	# Lưu thưởng vào nhân vật trước khi autosave: nếu tắt game khi popup còn mở
 	# thì lần sau vẫn nhận được (Main gọi take_unclaimed_rewards khi nạp).
 	SaveSystem.character_data["unclaimed_rewards"] = chest.items
@@ -359,6 +370,8 @@ func evaluate_day_end() -> Dictionary:
 	current_day += 1
 	today_sp = 0
 	kills_today = 0
+	var acc := SaveSystem.account_data
+	acc["season_best_day"] = maxi(int(acc.get("season_best_day", 0)), current_day)
 	autosave()
 	EventBus.day_started.emit(current_day)
 	EventBus.score_updated.emit(today_sp, character_total_sp)

@@ -152,6 +152,10 @@ func create_new_character(char_name: String, talent: Dictionary) -> Dictionary:
 # ==========================================
 ## Gọi đúng 1 lần khi nhân vật chết. Trả về summary cho màn hình Permadeath.
 func kill_character_atomic(day_survived: int, sp_earned: int, talent_info: Dictionary) -> Dictionary:
+	return retire_character_atomic(day_survived, sp_earned, talent_info, "death")
+
+## Kết thúc nhân vật trong 1 transaction. reason: "death" | "prestige" (Tái Sinh tự nguyện).
+func retire_character_atomic(day_survived: int, sp_earned: int, talent_info: Dictionary, reason: String) -> Dictionary:
 	var char_id := str(character_data.get("char_id", "legacy_%d" % Time.get_unix_time_from_system()))
 	var journal := {
 		"char_id": char_id,
@@ -161,6 +165,7 @@ func kill_character_atomic(day_survived: int, sp_earned: int, talent_info: Dicti
 		"kills": int(character_data.get("monsters_killed", 0)),
 		"talent": talent_info,
 		"date": Time.get_date_string_from_system(),
+		"reason": reason,
 	}
 	# Bước 0: ghi ý định (write-ahead log). Từ đây nhân vật coi như đã chết.
 	_write_json_atomic(DEATH_JOURNAL_PATH, journal)
@@ -181,12 +186,18 @@ func _apply_death_journal(j: Dictionary) -> Dictionary:
 	var processed: Array = account_data.get("processed_deaths", [])
 	var already := char_id in processed
 	var record_broken := day_survived > old_record
+	var reason := str(j.get("reason", "death"))
 
 	# Bước 1: cập nhật Account (idempotent nhờ processed_deaths)
 	if not already:
 		account_data["total_games_played"] = int(account_data.get("total_games_played", 0)) + 1
 		if record_broken:
 			account_data["highest_day_record"] = day_survived
+		# Kỷ lục trong mùa hiện tại (BXH Sinh Tồn theo mùa)
+		account_data["season_best_day"] = maxi(int(account_data.get("season_best_day", 0)), day_survived)
+		if reason == "prestige":
+			account_data["prestige_level"] = int(account_data.get("prestige_level", 0)) + 1
+			add_title("Tái Sinh Giả Bậc %d" % account_data.prestige_level)
 		if sp_earned > int(account_data.get("highest_sp_record", 0)):
 			account_data["highest_sp_record"] = sp_earned
 		if day_survived >= 5: add_title("Người Sống Sót Hoang Cổ")
@@ -201,6 +212,7 @@ func _apply_death_journal(j: Dictionary) -> Dictionary:
 			"talent_rank": talent_info.get("rank_str", "F"),
 			"talent_name": talent_info.get("name", "Vô Thiên Phú"),
 			"record": record_broken,
+			"reason": reason,
 			"date": j.get("date", ""),
 		})
 		while logs.size() > 20:
@@ -227,5 +239,7 @@ func _apply_death_journal(j: Dictionary) -> Dictionary:
 		"day_survived": day_survived,
 		"sp_earned": sp_earned,
 		"talent": talent_info,
+		"reason": reason,
+		"prestige_level": int(account_data.get("prestige_level", 0)),
 	}
 	return last_death_summary

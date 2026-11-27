@@ -9,6 +9,7 @@ const OutpostScene = preload("res://src/world/outpost/Outpost.tscn")
 const WorldBossScript = preload("res://src/world/boss/WorldBoss.gd")
 const RaidWarningScene = preload("res://src/ui/raid/RaidWarningUI.tscn")
 const TalentPanelScene = preload("res://src/ui/talent/TalentPanel.tscn")
+const SeasonPanelScript = preload("res://src/ui/SeasonPanel.gd")
 ## World Boss xuất hiện mỗi N ngày (Spec §8)
 const WORLD_BOSS_EVERY: int = 3
 
@@ -121,6 +122,7 @@ func _ready() -> void:
 	add_child(raid_warning_ui)
 	talent_panel = TalentPanelScene.instantiate()
 	add_child(talent_panel)
+	add_child(SeasonPanelScript.new()) # [P] Mùa giải / Season Pass / Tái Sinh
 	EventBus.day_started.connect(func(_d): _spawn_world_boss_if_due())
 	_spawn_world_boss_if_due()
 
@@ -261,6 +263,7 @@ func _on_world_boss_defeated(summary: Dictionary) -> void:
 	var c := SaveSystem.character_data
 	c["world_boss_defeated_day"] = GameState.current_day
 	c["world_bosses_defeated"] = int(c.get("world_bosses_defeated", 0)) + 1 # Giác Ngộ bậc S
+	EventBus.world_boss_defeated.emit(GameState.current_day)
 	var pts := int(summary.get("contributions", {}).get("local_player", {}).get("alliance_points", 0))
 	SaveSystem.account_data["alliance_points"] = int(SaveSystem.account_data.get("alliance_points", 0)) + pts
 	SaveSystem.save_account()

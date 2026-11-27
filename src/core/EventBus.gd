@@ -35,6 +35,8 @@ signal structure_upgraded(new_tier: int, pos: Vector2)
 signal quest_updated(quests: Array)
 signal resource_gathered(key: String, amount: int) # key: wood/stone/iron/meat/bone/reroll_pill
 signal quest_completed(quest: Dictionary)
+signal weekly_quest_updated(quests: Array)
+signal world_boss_defeated(day: int)
 
 # Combat
 signal enemy_killed(enemy_type: String, is_elite: bool, pos: Vector2)
