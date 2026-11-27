@@ -206,11 +206,16 @@ graph LR
 
 ## 6. THIÊN PHÚ NGẪU NHIÊN & KỸ NĂNG ẨN KÍCH HOẠT QUA HÀNH ĐỘNG
 
-### 6.1. Thiên Phú Khởi Đầu (Roll Server-Side F -> SSS)
-* **Hạng F – D (45% – 25%):** Nông Dân Chăm Chỉ (+15% chặt gỗ), Thể Lực Dẻo Dai (+20 Max Stamina).
-* **Hạng C – B (15% – 8%):** Hấp Huyết Nhẹ (Hồi 3% HP khi hạ quái), Thuần Hóa Sơ Cấp (Có thể thuần phục chó sói).
-* **Hạng A – S (4.5% – 2%):** Bất Diệt Khiên (Miễn tử 1 lần trong đêm thú triều), Thấu Thị Địa Tầng (Nhìn xuyên mỏ quặng ngầm).
-* **Hạng SSS (0.5%):** **Chúa Tể Không Gian** (Kho đồ không giới hạn trọng lượng và dung tích), **Cổ Thần Chi Nhãn** (Thấy trước đường đi của thú triều và điểm yếu chí mạng của mọi boss).
+### 6.1. Thiên Phú Khởi Đầu (Kim Tự Tháp Tỷ Lệ Nghịch: F -> SSS)
+Nguyên tắc thiết kế thế giới: Số lượng chủng loại thiên phú **tỉ lệ nghịch với bậc** (Bậc thấp số lượng rất nhiều và đa dạng ngành nghề; bậc cao số lượng cực ít và mang tính độc bản/quy tắc):
+* **Bậc F (45% - 25 loại):** Cực kỳ đa dạng, phản ánh ngành nghề và thói quen ở Lam Tinh (Shipper chạy nhanh, Cửu vạn vác nặng, Thợ điện bẫy rập, Bác sĩ sơ cứu, Cần thủ câu cá...).
+* **Bậc D (25% - 18 loại):** Bổ trợ sinh tồn và khai khoáng sơ cấp (Thiết Bì Thể Chất, Luyện Kim Nhập Môn, Tiều Phu Lão Luyện, Bẫy Rập Chuyên Gia...).
+* **Bậc C (15% - 12 loại):** Kỹ năng chiến đấu & sinh hoạt thực chiến (Khát Máu Trảm Sát, Hỏa Chủng Thân Hòa, Linh Xảo Lách Đòn, Tầm Nhìn Dạ Xoa...).
+* **Bậc B (8% - 8 loại):** Đột phá chuyên sâu (Tâm Linh Ngự Thú, Xảo Đoạt Thiên Công, Hàn Băng Thể Phách, Pháo Đài Trưởng...).
+* **Bậc A (4.5% - 5 loại):** Cột trụ đội nhóm (Bất Diệt Chiến Ý, Thấu Thị Địa Mạch, Cổ Thụ Hộ Mệnh, Cuồng Lôi Trừng Phạt, Vạn Thú Chi Hữu).
+* **Bậc S (2% - 3 loại):** Thao túng quy tắc (Lôi Đình Thần Phạt, Thời Không Lược Ảnh, Thần Nông Dược Điển).
+* **Bậc SSS (0.5% - 2 loại Độc Bản Tối Thượng):** **Hư Không Động Thiên** (Động phủ mang theo, balo vô hạn) & **Thái Cổ Thần Hoàng Quyết** (Hồi sinh nghịch chuyển Permadeath).
+*(Xem danh mục đầy đủ và chỉ số chi tiết tại `docs/DATABASE_HE_THONG_VAT_PHAM_KY_NANG.md`)*
 
 ### 6.2. Kỹ Năng / Thiên Phú Ẩn Kích Hoạt Qua Hành Động (Action-Triggered Skills)
 *Lấy cảm hứng sâu sắc từ motif "bền bỉ ngộ đạo" của tiểu thuyết mạng Lam Tinh xuyên không:*

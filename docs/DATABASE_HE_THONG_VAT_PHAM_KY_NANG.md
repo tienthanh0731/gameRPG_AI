@@ -5,42 +5,140 @@
 
 ## PHẦN 1: BẢNG DANH MỤC THIÊN PHÚ TOÀN DIỆN (TALENT TREE F -> SSS)
 
-Thiên phú được chia thành 6 Hệ chính:
-1. **Chiến Đấu (Combat):** Tăng sức công phá, phòng thủ, bạo kích.
-2. **Sinh Hoạt & Chế Tác (Life & Crafting):** Tốc độ thu thập, nhân bản nguyên liệu, may mắn rèn đúc.
-3. **Sinh Tồn & Thể Chất (Survival & Vitality):** Kháng đói khát, kháng nhiệt độ, tự hồi máu.
-4. **Nguyên Tố & Dị Năng (Elemental & Arcane):** Lửa, Băng, Lôi, Độc, Phong.
-5. **Không Gian & Thời Gian (Space & Time):** Dịch chuyển, làm chậm, mở rộng túi đồ.
-6. **Triệu Hồi & Dị Thú (Beast Master & Summoning):** Thuần phục dã thú, gọi phân thân.
+### 1.1. Quy Luật Phân Phối Tỷ Lệ Nghịch (Inverse Pyramid Distribution)
+Theo thiết lập thế giới Lam Tinh Xuyên Không:
+* **Bậc càng thấp (F, D, C):** Số lượng chủng loại thiên phú **càng nhiều và cực kỳ đa dạng** (chiếm số đông quần chúng, phản ánh các đặc điểm nghề nghiệp, thói quen sinh hoạt ở Lam Tinh mang sang).
+* **Bậc càng cao (A, S, SSS):** Số lượng chủng loại thiên phú **càng ít và độc bản** (hàng hiếm có khó tìm, mang tính quy tắc và định hình toàn bộ meta server).
 
 ```
-THANG BẬC & TỶ LỆ ROLL GỐC:
-[F: 45%] -> [D: 25%] -> [C: 15%] -> [B: 8%] -> [A: 4.5%] -> [S: 2%] -> [SSS: 0.5%]
+KIM TỰ THÁP THIÊN PHÚ (SỐ LƯỢNG TỶ LỆ NGHỊCH VỚI BẬC):
+   [ SSS:  2 Thiên phú ]      <--- Độc bản tối thượng, xoay chuyển càn khôn (0.5%)
+    [ S:   3 Thiên phú ]      <--- Thao túng quy tắc thế giới (2.0%)
+     [ A:  5 Thiên phú ]      <--- Cột trụ chiến thuật và phòng ngự (4.5%)
+      [ B: 8 Thiên phú ]      <--- Chuyên môn hóa sâu, thuần thú & chế tác (8.0%)
+      [ C: 12 Thiên phú ]     <--- Kỹ năng sinh tồn & chiến đấu thực chiến (15.0%)
+     [ D:  18 Thiên phú ]     <--- Bổ trợ sinh hoạt & khai khoáng sơ cấp (25.0%)
+    [ F:   25 Thiên phú ]     <--- Quần chúng Lam Tinh, muôn hình vạn trạng (45.0%)
 ```
 
-| Bậc | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi / Chiến Thuật |
-| :--- | :--- | :--- | :--- | :--- |
-| **F** | **Cửu Vạn Lực Lưỡng** | Sinh Hoạt | Tải trọng mang vác tối đa +15 kg; chặt cây tốn ít hơn 10% thể lực. | Chuyên làm phu đốn củi, khuân vác đá giai đoạn đầu. |
-| **F** | **Cường Tráng Cơ Bắp** | Sinh Tồn | Máu tối đa (Max HP) +30; kháng rét nhẹ (+1°C ngưỡng chịu lạnh). | Thích hợp cho người mới làm quen, giảm tỷ lệ chết sớm. |
-| **F** | **Thợ Săn Nghiệp Dư** | Chiến Đấu | Sát thương cung tên lên thú nhỏ (thỏ, gà rừng) +20%. | Săn mồi kiếm thức ăn nhanh hơn trong 3 ngày đầu. |
-| **D** | **Thiết Bì Thể Chất** | Sinh Tồn | Giáp vật lý cơ bản +10; giảm 15% sát thương vết cắn từ dã thú. | Build tank sơ cấp, đứng vững trước thú triều đêm 8. |
-| **D** | **Luyện Kim Nhập Môn** | Chế Tác | Khi nấu quặng sắt/đồng, có 15% cơ hội nhận thêm 1 thỏi miễn phí. | Tiết kiệm than và quặng thô, tối ưu kinh tế. |
-| **D** | **Lạc Bộ Như Phi** | Sinh Hoạt | Tốc độ chạy nhanh (Sprint) +12%; tiêu hao thể lực khi chạy giảm 15%. | Thám hiểm bản đồ, chạy trốn quái ban đêm cực tốt. |
-| **C** | **Khát Máu Trảm Sát** | Chiến Đấu | Mỗi khi hạ gục 1 quái vật, hồi ngay 5% Máu tối đa và nhận 5 giây tăng tốc. | Đánh bầy quái nhỏ trong thú triều không lo cạn máu. |
-| **C** | **Hỏa Chủng Thân Hòa** | Nguyên Tố | Miễn nhiễm bỏng lửa; đứng cạnh lửa trại hồi máu nhanh gấp 3 lần. | Khắc phục hoàn toàn cái rét ban đêm, giữ ấm dễ dàng. |
-| **C** | **Ngư Phu Kỳ Tài** | Sinh Hoạt | Tốc độ cắn câu +50%; 20% câu được cá biến dị tăng vĩnh viễn thuộc tính. | Sinh tồn bằng đường sông nước, chế biến thức ăn cao cấp. |
-| **B** | **Tâm Linh Ngự Thú** | Triệu Hồi | Có thể thuần hóa 1 dã thú hoang dã (Chó sói/Báo) thành pet chiến đấu vĩnh viễn. | Người chơi solo có thêm đồng đội gánh sát thương. |
-| **B** | **Xảo Đoạt Thiên Công** | Chế Tác | Mọi trang bị tự chế tạo có tỷ lệ nhảy phẩm cấp (từ Trắng lên Lục/Lam) tăng +25%. | Thợ rèn của nhóm hoặc làm giàu từ sàn giao dịch. |
-| **B** | **Hàn Băng Thể Phách** | Nguyên Tố | Đòn đánh làm chậm quái 30%; miễn nhiễm hoàn toàn trạng thái Hạ Thân Nhiệt. | Thoải mái thám hiểm ban đêm và vùng tuyết vĩnh cửu. |
-| **A** | **Bất Diệt Chiến Ý** | Chiến Đấu | Khi Máu dưới 25%, kích hoạt Khiên Bất Tử trong 4 giây (Hồi chiêu: 1 đêm). | Cứu mạng ngoạn mục trước những cú vồ chí mạng của Boss. |
-| **A** | **Thấu Thị Địa Mạch** | Không Gian | Nhìn thấy mạch quặng quý và rương kho báu ngầm xuyên qua lòng đất trong 30m. | Máy dò kim loại sống, giàu tài nguyên thần tốc. |
-| **A** | **Cổ Thụ Hộ Mệnh** | Dị Năng | Tường căn cứ xung quanh người chơi nhận thêm 35% giáp và tự phản 20% sát thương. | Thủ lĩnh phòng ngự, giữ vững pháo đài trước thú triều lớn. |
-| **S** | **Lôi Đình Cuồng Nộ** | Nguyên Tố | Mọi đòn đánh đều kèm theo tia sét giật lan 4 mục tiêu, gây choáng 1 giây. | Quét sạch quái bầy đàn trong tích tắc. |
-| **S** | **Thời Không Lược Ảnh** | Thời Gian | Lướt né chiêu tạo ra một vùng làm chậm 80% mọi quái vật trong 3 giây. | Thao túng cục diện chiến trường, né đòn tuyệt đối. |
-| **S** | **Thần Nông Dược Điển** | Sinh Hoạt | Trồng trọt dược liệu thu hoạch ngay sau 1 giờ; chế tạo độc dược/thần dược cực hạn. | Cung ứng thuốc cứu mạng và tăng lực cho cả server. |
-| **SSS** | **Hư Không Động Thiên** | Không Gian | Sở hữu Động Phủ Hư Không mang theo người: Kho đồ vô hạn dung tích, có thể bước vào trong để trốn thú triều. | Build huyền thoại, không bao giờ lo mất đồ khi thám hiểm. |
-| **SSS** | **Thái Cổ Thần Hoàng Quyết**| Chiến Đấu | Chết sẽ lập tức tái sinh tại chỗ với 100% Máu và phóng ra sóng lửa hủy diệt toàn màn hình (1 lần/mùa). | Đảo ngược quy luật Permadeath, vị thế tuyệt đối trên BXH. |
-| **SSS** | **Khởi Nguyên Tạo Vật** | Chế Tác | Có thể phân giải và tái tạo bất kỳ vật chất nào; chế đồ bỏ qua tỷ lệ thất bại, 100% đạt Thần Thoại. | Nắm giữ nền kinh tế tối cao của toàn server. |
+---
+
+### 1.2. Danh Mục Chi Tiết 73 Thiên Phú
+
+#### 🟢 BẬC F (25 Thiên Phú - Phổ Thông Nhất, Nghề Nghiệp & Thói Quen Lam Tinh)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Cửu Vạn Lực Lưỡng** | Sinh Hoạt | Tải trọng balo +15 kg; chặt cây tốn ít hơn 10% thể lực. | Phu đốn củi, khuân vác tài nguyên. |
+| 2 | **Cường Tráng Cơ Bắp** | Sinh Tồn | Máu tối đa (Max HP) +30; tăng 1°C ngưỡng chịu rét. | Tân thủ cứng cáp, giảm tỷ lệ chết sớm. |
+| 3 | **Thợ Săn Nghiệp Dư** | Chiến Đấu | Sát thương cung tên lên thú nhỏ (thỏ, chim rừng) +25%. | Kiếm thức ăn nhanh trong 3 ngày đầu. |
+| 4 | **Túi Dạ Dày Bò** | Sinh Tồn | Thanh đói giảm chậm hơn 15%; ăn thức ăn thô ít bị đau bụng. | Thích hợp cho người lười tìm thức ăn. |
+| 5 | **Mọt Sách Trí Nhớ** | Chế Tác | Nhận thêm 10% điểm kinh nghiệm khi chế tạo vật phẩm. | Nhanh mở khóa công thức đồ đạc mới. |
+| 6 | **Dân Chạy Shipper** | Sinh Hoạt | Tiêu hao thể lực khi chạy bộ giảm 15%. | Thám hiểm mở bản đồ, chạy trốn dã thú. |
+| 7 | **Bàn Tay Khéo Léo** | Chế Tác | Tốc độ đan dây leo, làm giỏ mây, đóng hòm nhanh hơn 30%. | Xây dựng căn cứ sơ khai tốc độ cao. |
+| 8 | **Thính Giác Nhạy Bén** | Sinh Tồn | Nghe thấy tiếng bước chân quái vật từ khoảng cách xa hơn 8m. | Tránh bị phục kích trong sương mù đêm. |
+| 9 | **Cần Thủ Kiên Trì** | Sinh Hoạt | Tỷ lệ cá cắn câu tăng 20%; giảm nguy cơ đứt dây câu. | Kiếm nguồn đạm dồi dào ven sông. |
+| 10 | **Dân Văn Phòng Trầm Lặng**| Sinh Tồn | Tốc độ tích tụ căng thẳng giảm; ngồi nghỉ hồi thể lực nhanh hơn 20%. | Hồi sức nhanh giữa các đợt lao động. |
+| 11 | **Thợ Điện Đãng Trí** | Chế Tác | Tăng 10% sát thương từ bẫy cơ quan tự chế tạo. | Đặt bẫy chông quanh nhà gỗ. |
+| 12 | **Đôi Mắt Tinh Anh** | Sinh Hoạt | Dễ phát hiện tổ ong, quả mọng ẩn trong bụi rậm hơn 25%. | Tìm kiếm thực phẩm dồi dào đầu game. |
+| 13 | **Chân Bơi Rái Cá** | Sinh Hoạt | Tốc độ bơi dưới nước +25%; giảm tiêu hao oxi 20%. | Vượt sông, khai thác tài nguyên lòng suối. |
+| 14 | **Làn Da Dày Dạn** | Sinh Tồn | Giảm 10% sát thương từ gai góc cào rách khi chui qua bụi rậm. | Thu thập thảo dược trong rừng gai. |
+| 15 | **Bác Sĩ Thực Tập** | Sinh Tồn | Băng gạc và thảo dược hồi phục thêm 15% lượng máu. | Tự hồi phục tiết kiệm thuốc men. |
+| 16 | **Kẻ Nhặt Rác May Mắn**| Sinh Hoạt | 10% cơ hội nhặt thêm 1 cành củi/đá cuội khi thu lượm trên mặt đất. | Tích tiểu thành đại ở giai đoạn trắng tay. |
+| 17 | **Hơi Thở Sâu Dài** | Sinh Tồn | Thanh thể lực tối đa +15 điểm. | Thao tác vung rìu/cuốc được nhiều nhịp hơn. |
+| 18 | **Kháng Độc Nhẹ** | Sinh Tồn | Thời gian trúng độc từ bọ cắn giảm 20%. | Đỡ nguy hiểm khi lỡ hái nấm dại. |
+| 19 | **Đầu Bếp Gia Đình** | Sinh Hoạt | Thức ăn nướng trên lửa trại giữ ấm cơ thể thêm 10 phút. | Kháng rét cho bản thân và đồng đội. |
+| 20 | **Thói Quen Tiết Kiệm**| Sinh Hoạt | Đuốc cháy lâu hơn 25% trước khi tàn lụi. | Tiết kiệm nhựa cây và gỗ vào ban đêm. |
+| 21 | **Lạc Quan Yêu Đời** | Tâm Trí | Tốc độ hồi máu tự nhiên khi đứng cạnh đồng minh tăng 15%. | Thích hợp chơi nhóm, hỗ trợ tinh thần. |
+| 22 | **Cú Vung Rìu Dứt Khoát**| Chiến Đấu| Sát thương rìu đốn củi lên quái vật tăng 15%. | Dùng rìu làm vũ khí phòng thân tạm thời. |
+| 23 | **Thói Quen Ngủ Sớm** | Sinh Tồn | Ngủ trên giường nhà gỗ hồi phục đầy thanh máu nhanh hơn 25%. | Mau chóng lấy lại phong độ sau khi bị thương. |
+| 24 | **Khứu Giác Động Vật** | Sinh Tồn | Phát hiện mùi thịt thối hoặc nguồn nước ngọt trong bán kính 15m. | Sinh tồn vùng hoang mạc thiếu nước. |
+| 25 | **Người Chịu Nóng** | Sinh Tồn | Ngưỡng chịu sốc nhiệt tăng thêm +1.5°C khi trời nắng gắt. | Hoạt động tốt giữa trưa nắng. |
+
+---
+
+#### 🟡 BẬC D (18 Thiên Phú - Kỹ Năng Bổ Trợ Sơ Cấp & Bắt Đầu Định Hình Hướng Đi)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Thiết Bì Thể Chất** | Sinh Tồn | Giáp vật lý cơ bản +10; giảm 15% sát thương từ vết cắn dã thú. | Build đỡ đòn sơ khai, đứng chặn cửa nhà. |
+| 2 | **Luyện Kim Nhập Môn** | Chế Tác | Khi nung quặng sắt/đồng, 15% cơ hội nhận thêm 1 thỏi miễn phí. | Tiết kiệm khoáng sản quý giá. |
+| 3 | **Lạc Bộ Như Phi** | Sinh Hoạt | Tốc độ chạy nước rút (Sprint) +12%; tiêu hao thể lực giảm 15%. | Di chuyển liên vùng, né thú triều cơ động. |
+| 4 | **Tiều Phu Lão Luyện** | Sinh Hoạt | Chặt cây gây x2 sát thương lên thân mộc; 10% rơi gỗ lõi chất lượng. | Khai thác gỗ làm nhà kiên cố cực nhanh. |
+| 5 | **Thợ Mỏ Cần Mẫn** | Sinh Hoạt | Tốc độ đập đá +25%; giảm 20% tỷ lệ mẻ cuốc khai khoáng. | Cung cấp đá và sắt thỏi cho liên minh. |
+| 6 | **Bách Bộ Xuyên Dương Sơ Cấp**| Chiến Đấu| Tầm bắn cung tên +3m; tốc độ giương cung nhanh hơn 15%. | Xạ thủ trên tháp canh nhà gỗ. |
+| 7 | **Hộ Vệ Khiên Gỗ** | Chiến Đấu | Chặn đòn bằng khiên giảm thêm 15% sát thương lọt qua. | Chống chịu các cú tát trời giáng của gấu. |
+| 8 | **Gia Cố Công Trình Sơ Cấp**| Chế Tác | Tường rào do người này dựng nhận thêm 20% độ bền tối đa. | Thợ xây căn cứ, tăng sức bền phòng tuyến. |
+| 9 | **Dã Ngoại Sinh Tồn Giả** | Sinh Tồn | Kháng cả nóng và lạnh +1°C; uống nước suối tự nhiên không đau bụng. | Thám hiểm độc hành không cần chuẩn bị nhiều. |
+| 10 | **Huyết Khí Tráng Kiện** | Sinh Tồn | Khi máu dưới 30%, tự động hồi máu từ từ lên mức 30% mà không tốn thuốc. | Giữ mạng sống sót qua những thời khắc hiểm nghèo. |
+| 11 | **Bẫy Rập Chuyên Gia** | Chiến Đấu | Sát thương bẫy chông +30%; bẫy có 25% cơ hội không bị hỏng sau khi nổ. | Dựng bãi mìn chông quanh căn cứ. |
+| 12 | **Đả Kích Chí Mạng** | Chiến Đấu | Tỷ lệ bạo kích đòn đánh thường +8%. | Sát thủ dồn sát thương quái tinh anh. |
+| 13 | **Chiết Xuất Thảo Dược** | Chế Tác | Chế tạo bình thuốc tăng 20% dược tính hồi phục. | Dược sư sơ cấp, buôn bán thuốc trên sàn. |
+| 14 | **Đầu Bếp Hoang Dã** | Sinh Hoạt | Món ăn chế biến tăng thêm 25% chỉ số độ no và buff thể lực. | Hậu cần nuôi sống đội nhóm vượt qua đêm lạnh. |
+| 15 | **Bàn Tay Nhặt Khoáng**| Sinh Hoạt | Khi đào đá có 8% đào trúng đá quý/tinh thể thô. | Tích lũy phụ gia cho chế tạo đồ lam. |
+| 16 | **Thuần Dưỡng Tiểu Thú**| Triệu Hồi | Có thể cho thú nhỏ (chồn, cáo) ăn để chúng nhặt cành cây/quả về nhà. | Thú nuôi tự động lượm tài nguyên quanh căn cứ. |
+| 17 | **Chiến Ý Sục Sôi** | Chiến Đấu | Sau khi hạ 1 quái, đòn đánh kế tiếp tăng 25% sát thương trong 3 giây. | Đánh chuỗi quét quái nhỏ liên tục. |
+| 18 | **Giác Quan Nguy Hiểm** | Sinh Tồn | Bản đồ nhỏ phát tín hiệu nhấp nháy đỏ khi có quái vật tiếp cận trong 20m. | Cảnh báo sớm trước các cuộc đột kích ban đêm. |
+
+---
+
+#### 🔵 BẬC C (12 Thiên Phú - Kỹ Năng Thực Chiến & Sinh Tồn Chuyên Biệt)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Khát Máu Trảm Sát** | Chiến Đấu | Mỗi khi hạ 1 quái vật, hồi 5% Max HP và nhận 5 giây tăng 20% tốc độ chạy. | Đồ sát bầy quái thú triều không lo cạn máu. |
+| 2 | **Hỏa Chủng Thân Hòa** | Nguyên Tố | Miễn nhiễm bỏng lửa; đứng cạnh lửa trại hồi máu x3 lần; vũ khí có xác suất bốc cháy. | Khắc chế màn đêm buốt giá, cận chiến hệ hỏa. |
+| 3 | **Ngư Phu Kỳ Tài** | Sinh Hoạt | Tốc độ cắn câu +50%; 20% câu được cá biến dị tăng vĩnh viễn thuộc tính nhỏ. | Câu cá kiếm bảo vật và tăng tiến sức mạnh lâu dài. |
+| 4 | **Thiết Giáp Cương Thân** | Chiến Đấu | Giảm 20% sát thương đòn đánh trực diện; kháng hiệu ứng choáng nhẹ. | Đứng trước cổng thành chắn quái húc. |
+| 5 | **Linh Xảo Lách Đòn** | Chiến Đấu | Lướt né chiêu (Dash) hồi lại nhanh hơn 30%; tiêu hao thể lực giảm 25%. | Lối đánh cơ động, né chiêu boss không tốn sức. |
+| 6 | **Cường Hóa Cung Thủ** | Chiến Đấu | Mũi tên bắn ra có 25% cơ hội xuyên qua 2 mục tiêu liên tiếp. | Tiêu diệt quái theo hàng dọc trước cổng rào. |
+| 7 | **Hàn Khí Ngưng Tụ** | Nguyên Tố | Đòn đánh thường làm chậm 20% tốc chạy của quái; chịu lạnh ban đêm cực tốt. | Thả diều quái to, làm chậm bước tiến thú triều. |
+| 8 | **Thợ Rèn Đột Phá** | Chế Tác | Khi chế tạo trang bị, 20% nhảy từ phẩm chất Trắng lên Lục hoặc Lục lên Lam. | Sản xuất trang bị chất lượng cao kiếm lời. |
+| 9 | **Bậc Thầy Bẫy Rập** | Chế Tác | Quái đạp trúng bẫy bị trói chân 3 giây và chịu thêm 40% sát thương từ người chơi. | Giữ chân quái tinh anh để đồng đội dồn sát thương. |
+| 10 | **Tầm Nhìn Dạ Xoa** | Sinh Tồn | Tầm nhìn trong bóng tối ban đêm tăng gấp đôi (từ 15% lên 30%); không sợ sương mù. | Đi săn đêm kiếm tài nguyên phó bản hiếm. |
+| 11 | **Hấp Thụ Độc Tố** | Sinh Tồn | Miễn nhiễm 70% độc nhện/rắn; khi trúng độc tự chuyển hóa thành thể lực. | Chinh phục đầm lầy tử khí dễ như dạo chơi. |
+| 12 | **Khí Công Hộ Thể** | Thể Chất | Tạo một lớp màng hấp thụ 100 sát thương mỗi 60 giây khi rời giao tranh. | Lá chắn tự hồi phục, tiết kiệm dược liệu tối đa. |
+
+---
+
+#### 🟣 BẬC B (8 Thiên Phú - Chuyên Môn Hóa Đột Phá, Khác Biệt Rõ Nét)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Tâm Linh Ngự Thú** | Triệu Hồi | Thuần hóa 1 dã thú hoang dã (Sói/Báo/Gấu) thành pet chiến đấu trung thành vĩnh viễn. | Tăng hỏa lực, có thú cưng gánh đòn cho chủ. |
+| 2 | **Xảo Đoạt Thiên Công** | Chế Tác | Mọi trang bị chế tạo có tỷ lệ nhảy phẩm cấp tăng +25%; giảm 20% nguyên liệu rèn. | Thợ rèn huyền thoại của bang hội. |
+| 3 | **Hàn Băng Thể Phách** | Nguyên Tố | Đòn đánh đóng băng quái 1.5 giây; miễn nhiễm hoàn toàn trạng thái Hạ Thân Nhiệt. | Bất tử trước mùa đông và cái rét ban đêm. |
+| 4 | **Cuồng Phong Trảm Kích**| Chiến Đấu | Tốc độ đánh cận chiến +30%; đòn thứ 4 tung ra lốc xoáy hất tung quái nhỏ. | Đồ tể bão đao, xé nát bầy quái áp sát. |
+| 5 | **Kim Thạch Thần Thông** | Sinh Hoạt | Đào mỏ luôn rớt x2 quặng; có thể đào được quặng Tier 3 mà không cần cuốc cao cấp. | Thống trị nguồn cung kim loại toàn server. |
+| 6 | **Pháo Đài Trưởng** | Dị Năng | Khi đứng trong phạm vi căn cứ: Bản thân nhận +30% công/thủ; tường thành tự hồi 0.5% máu/phút. | Trùm thủ nhà, pháo đài bất khả xâm phạm. |
+| 7 | **Huyết Tế Cuồng Nộ** | Chiến Đấu | Máu càng tụt, sát thương càng tăng (mỗi 10% máu mất = +8% sát thương, tối đa +64%). | Đánh liều mạng, lật kèo boss trong gang tấc. |
+| 8 | **Linh Dược Đan Sư** | Chế Tác | Tự sáng tạo các loại đan dược biến dị: Thuốc tăng lực, thuốc tàng hình, thuốc giải độc vạn năng. | Nhà giả kim tối thượng, nắm huyết mạch kinh tế thuốc. |
+
+---
+
+#### 🔴 BẬC A (5 Thiên Phú - Cột Trụ Đội Nhóm & Thay Đổi Chiến Cục)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Bất Diệt Chiến Ý** | Chiến Đấu | Khi Máu dưới 20%, lập tức kích hoạt Khiên Bất Tử trong 4 giây và hồi 30% Máu (Hồi chiêu: 1 chu kỳ đêm). | Cứu mạng tuyệt đối trước những pha One-hit của Boss. |
+| 2 | **Thấu Thị Địa Mạch** | Không Gian | Nhìn thấy mạch quặng quý, hang động ngầm và rương cổ xuyên qua lòng đất trong 30m. | Máy dò kho báu sống, dẫn đội săn phó bản. |
+| 3 | **Cổ Thụ Hộ Mệnh** | Dị Năng | Tường căn cứ xung quanh nhận thêm 40% giáp; tự động bắn chông gai phản lại 25% sát thương khi bị quái húc. | Hạt nhân phòng ngự của liên minh trước thú triều lớn. |
+| 4 | **Cuồng Lôi Trừng Phạt** | Nguyên Tố | Mỗi đòn đánh tích 1 tầng sấm sét; đủ 5 tầng giáng thiên lôi thiêu đốt diện rộng gây choáng 2 giây. | Sát thương diện rộng hủy diệt đàn quái tinh anh. |
+| 5 | **Vạn Thú Chi Hữu** | Triệu Hồi | Dã thú hoang dã cấp thường không chủ động tấn công người chơi; có thể thuần hóa tối đa 3 chiến thú cùng lúc. | Quân đoàn thú chiến, một người quét sạch phó bản. |
+
+---
+
+#### 🟠 BẬC S (3 Thiên Phú - Thao Túng Quy Tắc Thế Giới, Siêu Cấp Hiếm)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Lôi Đình Thần Phạt** | Nguyên Tố | Mọi đòn đánh đều kèm theo sấm sét giật lan 5 mục tiêu; có thể gọi bão sét đánh sập các hang ổ quái vật từ xa. | Hỏa lực thần thánh quét sạch toàn bộ thú triều. |
+| 2 | **Thời Không Lược Ảnh** | Thời Gian | Lướt né tạo vùng ngưng đọng thời gian làm chậm 90% quái vật trong 4 giây; hồi chiêu kỹ năng giảm 50%. | Bất tử trong giao tranh, điều khiển nhịp độ trận đánh theo ý muốn. |
+| 3 | **Thần Nông Dược Điển** | Sinh Hoạt | Trồng thảo dược thu hoạch chỉ sau 30 phút; chế tạo Thần Đan ban phát buff vĩnh viễn cho bản thân và đồng đội. | Dược vương cứu rỗi cả server, định giá kinh tế toàn bộ dị giới. |
+
+---
+
+#### 🌟 BẬC SSS (2 Thiên Phú Độc Bản Tối Thượng - Nghịch Thiên Cải Mệnh, Chấn Động Toàn Server)
+| STT | Tên Thiên Phú | Hệ | Hiệu Ứng Chi Tiết | Lối Chơi Điển Hình |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **Hư Không Động Thiên** | Không Gian | **Sở hữu Động Phủ Không Gian Riêng:** Balo không đáy (vô hạn dung tích và tải trọng); có thể mở cổng bước hẳn vào trong động phủ để trú ẩn, né tránh hoàn toàn bất kỳ đợt thú triều hay boss nào ngoài thế giới thực. | Tự do tuyệt đối, mang theo cả gia tài bên mình mà không sợ rủi ro mất đồ khi tử trận. |
+| 2 | **Thái Cổ Thần Hoàng Quyết**| Chiến Đấu & Tái Sinh | **Nghịch Chuyển Sinh Tử:** Khi nhân vật tử trận, lập tức niết bàn hồi sinh tại chỗ với 100% HP, tạo ra sóng lửa Phượng Hoàng thiêu rụi toàn bộ quái vật trên màn hình (Miễn trừ cơ chế Permadeath 1 lần mỗi mùa giải). | Vị thế tối cao, bất tử trước quy luật nghiệt ngã của Hoang Cổ Giới. |
+
+---
 
 ---
 
