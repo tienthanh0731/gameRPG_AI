@@ -1,0 +1,22 @@
+# Godot 4 specific ignores
+.godot/
+*.translation
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editor & IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build outputs
+build/
+bin/
+export/
+*.tmp
