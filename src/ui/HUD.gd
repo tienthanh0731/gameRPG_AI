@@ -15,6 +15,8 @@ extends CanvasLayer
 @onready var sp_label: Label = $RightPanel/MarginContainer/VBoxContainer/SPLabel
 @onready var talent_label: Label = $RightPanel/MarginContainer/VBoxContainer/TalentLabel
 @onready var btn_leaderboard: Button = $RightPanel/MarginContainer/VBoxContainer/BtnLeaderboard
+@onready var btn_crafting: Button = $RightPanel/MarginContainer/VBoxContainer/BtnCrafting
+@onready var btn_map: Button = $RightPanel/MarginContainer/VBoxContainer/BtnMap
 
 @onready var day_label: Label = $TopPanel/MarginContainer/VBoxContainer/DayLabel
 @onready var biome_label: Label = $TopPanel/MarginContainer/VBoxContainer/BiomeLabel
@@ -26,14 +28,22 @@ extends CanvasLayer
 @onready var day_summary_ui: Control = $DaySummaryUI
 @onready var permadeath_ui: Control = $PermadeathUI
 @onready var leaderboard_ui: Control = $LeaderboardUI
+@onready var crafting_ui: Control = $CraftingUI
+@onready var world_map_ui: Control = $WorldMapUI
 
 func _ready() -> void:
 	if day_summary_ui: day_summary_ui.visible = false
 	if permadeath_ui: permadeath_ui.visible = false
 	if leaderboard_ui: leaderboard_ui.visible = false
+	if crafting_ui: crafting_ui.visible = false
+	if world_map_ui: world_map_ui.visible = false
 	
 	if btn_leaderboard:
 		btn_leaderboard.pressed.connect(toggle_leaderboard)
+	if btn_crafting:
+		btn_crafting.pressed.connect(toggle_crafting)
+	if btn_map:
+		btn_map.pressed.connect(toggle_map)
 		
 	if day_summary_ui and day_summary_ui.has_signal("open_leaderboard_requested"):
 		day_summary_ui.open_leaderboard_requested.connect(toggle_leaderboard)
@@ -89,6 +99,20 @@ func show_permadeath(summary: Dictionary) -> void:
 func toggle_leaderboard() -> void:
 	if leaderboard_ui:
 		leaderboard_ui.visible = not leaderboard_ui.visible
+
+func toggle_crafting() -> void:
+	if crafting_ui:
+		if crafting_ui.has_method("toggle_ui"):
+			crafting_ui.toggle_ui()
+		else:
+			crafting_ui.visible = not crafting_ui.visible
+
+func toggle_map() -> void:
+	if world_map_ui:
+		if world_map_ui.has_method("toggle_map"):
+			world_map_ui.toggle_map()
+		else:
+			world_map_ui.visible = not world_map_ui.visible
 
 func update_tool(tool_id: int) -> void:
 	if tool_label:

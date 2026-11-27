@@ -4,6 +4,8 @@ const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
 const DungeonEntranceScene = preload("res://src/dungeon/DungeonEntrance.tscn")
 const TalentData = preload("res://src/data/TalentData.gd")
 
+var OutpostScene = load("res://src/world/outpost/Outpost.tscn")
+
 @onready var map_gen: Node2D = $MapGenerator
 @onready var player: CharacterBody2D = $Player
 @onready var day_night: CanvasModulate = $DayNightCycle
@@ -14,6 +16,7 @@ const TalentData = preload("res://src/data/TalentData.gd")
 
 var current_biome_temp: float = 28.0
 var dungeon_entrance_node: Node2D = null
+var outpost_node: Node2D = null
 
 var tex_wood_icon: Texture2D
 var tex_stone_icon: Texture2D
@@ -40,6 +43,8 @@ func _ready() -> void:
 		map_gen.player_spawn_found.connect(_on_player_spawn_found)
 		map_gen.biome_changed.connect(_on_biome_changed)
 		map_gen.resource_dropped.connect(_on_resource_dropped)
+		if map_gen.get("spawn_location") != null:
+			_on_player_spawn_found(map_gen.spawn_location)
 		
 	if player:
 		if player.has_signal("tool_changed") and hud and hud.has_method("update_tool"):
@@ -149,6 +154,13 @@ func _on_player_spawn_found(spawn_pos: Vector2) -> void:
 		dungeon_entrance_node = DungeonEntranceScene.instantiate()
 		dungeon_entrance_node.global_position = spawn_pos + Vector2(240, -140)
 		add_child(dungeon_entrance_node)
+
+	# Spawn Ancient Abandoned Outpost nearby (to the south-west)
+	if not outpost_node:
+		outpost_node = OutpostScene.instantiate()
+		outpost_node.name = "Outpost"
+		outpost_node.global_position = spawn_pos + Vector2(-340, 220)
+		add_child(outpost_node)
 
 func _on_resource_dropped(item_name: String, amount: int, pos: Vector2) -> void:
 	var item = DroppedItemScene.instantiate()

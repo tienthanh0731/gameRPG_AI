@@ -1,0 +1,150 @@
+[gd_scene format=3 uid="uid://crafting_ui_01"]
+
+[ext_resource type="Script" path="res://src/ui/crafting/CraftingUI.gd" id="1_craft_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_craft"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.6, 0.8, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_detail"]
+bg_color = Color(0.05, 0.06, 0.08, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.45, 0.6, 0.5)
+
+[node name="CraftingUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_craft_script")
+
+[node name="BackgroundDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.75)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -250.0
+offset_right = 380.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_craft")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="LabelTitle" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "✦ BÀN CHẾ TẠO VẬT PHẨM & TRANG BỊ ✦"
+horizontal_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="LeftCol" type="VBoxContainer" parent="Panel/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="TabBar" type="TabBar" parent="Panel/VBox/HBox/LeftCol"]
+layout_mode = 2
+tab_count = 3
+tab_0/title = "1. Vũ khí/Công cụ"
+tab_1/title = "2. Sinh tồn/Y tế"
+tab_2/title = "3. Phòng thủ"
+
+[node name="ItemList" type="ItemList" parent="Panel/VBox/HBox/LeftCol"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+
+[node name="RightCol" type="PanelContainer" parent="Panel/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_detail")
+
+[node name="VBoxDetail" type="VBoxContainer" parent="Panel/VBox/HBox/RightCol"]
+layout_mode = 2
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 10
+
+[node name="LabelDetailName" type="Label" parent="Panel/VBox/HBox/RightCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 17
+text = "Tên Vật Phẩm"
+
+[node name="LabelDetailDesc" type="Label" parent="Panel/VBox/HBox/RightCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Mô tả công dụng và thông số."
+autowrap_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="Panel/VBox/HBox/RightCol"]
+layout_mode = 2
+
+[node name="LabelDetailCost" type="Label" parent="Panel/VBox/HBox/RightCol"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+text = "Nguyên liệu yêu cầu:"
+
+[node name="BtnCraft" type="Button" parent="Panel/VBox/HBox/RightCol"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 15
+text = "✦ CHẾ TẠO ✦"
+
+[node name="BtnClose" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "ĐÓNG (PHÍM I / TAB / ESC)"
