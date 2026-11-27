@@ -77,7 +77,7 @@ func _build_extra_widgets() -> void:
 	top_vbox.add_child(tide_label)
 
 	var hint := Label.new()
-	hint.text = "[F] Ăn • [T] Đan Reroll • [L] BXH • [I] Chế tạo • [M] Bản đồ"
+	hint.text = "[F] Ăn • [T] Đan Reroll • [K] Thiên phú • [L] BXH • [I] Chế tạo • [M] Bản đồ"
 	hint.add_theme_font_size_override("font_size", 11)
 	right_vbox.add_child(hint)
 
@@ -135,10 +135,10 @@ func toggle_map() -> void:
 
 func update_tool(tool_id: int) -> void:
 	match tool_id:
-		0: tool_label.text = "[1] RÌU (chặt cây) | [2] Cuốc | [3] Kiếm | [B] Xây dựng | [E] Vào phó bản / mở cổng"
-		1: tool_label.text = "[2] CUỐC (đập đá, quặng) | [1] Rìu | [3] Kiếm | [B] Xây dựng"
+		0: tool_label.text = "[1] RÌU (chặt cây / phá công trình) | [2] Cuốc | [3] Kiếm | [B] Xây dựng | [E] Phó bản / cổng"
+		1: tool_label.text = "[2] CUỐC (đập đá, quặng / phá công trình) | [1] Rìu | [3] Kiếm | [B] Xây dựng"
 		2: tool_label.text = "[3] KIẾM (chiến đấu) | [1] Rìu | [2] Cuốc | [Space] Lướt né | [B] Xây dựng"
-		3: tool_label.text = "[XÂY DỰNG] 4: Tường (4 Gỗ) | 5: Cổng (6 Gỗ, 2 Đá) | 6: Bẫy (3 Gỗ, 1 Đá) | Click đặt | [U] Nâng cấp | [B] Thoát"
+		3: tool_label.text = "[XÂY DỰNG] Trái: Đặt | Phải: Phá dỡ | [4] Tường [5] Cổng [6] Chông [7] Nhà Gỗ | [U] Nâng cấp | [B] Đóng"
 	if tool_id <= 2 and not last_equipment.is_empty():
 		tool_label.text += "   •   " + _equipment_text(last_equipment, tool_id)
 

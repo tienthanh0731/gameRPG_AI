@@ -224,6 +224,15 @@ func _try_hit_interactable() -> void:
 		if body.has_method("take_hit"):
 			candidates.append(body)
 
+	# Direct proximity check: allow targeting structures or interactables within reach
+	if candidates.is_empty():
+		for group in ["structure", "enemy", "tree", "rock"]:
+			for node in get_tree().get_nodes_in_group(group):
+				if node is Node2D and is_instance_valid(node) and node.has_method("take_hit"):
+					if node.global_position.distance_to(global_position) <= 120.0:
+						if node.global_position.distance_to(mouse_pos) <= 75.0:
+							candidates.append(node)
+
 	if candidates.is_empty():
 		return
 

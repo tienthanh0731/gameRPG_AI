@@ -10,6 +10,7 @@ extends Node
 ## giữ nguyên chữ ký hàm để UI/logic không phải sửa.
 
 const TalentData = preload("res://src/data/TalentData.gd")
+const AwakeningData = preload("res://src/data/AwakeningData.gd")
 
 ## Số "người chơi khác" giả lập trên server (không tính bản thân).
 const SIM_POPULATION: int = 199
@@ -69,6 +70,40 @@ func use_reroll_pill() -> Dictionary:
 	c["rerolled"] = true
 	SaveSystem.save_character(c)
 	return new_talent
+
+## Thức tỉnh Thiên Phú Phụ (từ ngày 15, 1 lần). Trả về thiên phú phụ, {} nếu bị từ chối.
+func awaken_sub_talent() -> Dictionary:
+	var c: Dictionary = SaveSystem.character_data
+	if c.is_empty() or not AwakeningData.can_awaken_sub_talent(c, GameState.current_day):
+		return {}
+	var out: Dictionary = AwakeningData.awaken_sub_talent(c, GameState.current_day)
+	c["sub_talent"] = out.get("sub_talent", {})
+	c["sub_talent_unlocked_day"] = GameState.current_day
+	GameState.sub_talent = c.sub_talent
+	SaveSystem.save_character(c)
+	EventBus.talent_changed.emit(GameState.active_talent)
+	return c.sub_talent
+
+## Giác Ngộ: hoàn thành thử thách → lên bậc kế tiếp cùng dòng. slot: "talent" | "sub_talent"
+func promote_talent(slot: String = "talent") -> Dictionary:
+	var c: Dictionary = SaveSystem.character_data
+	if c.is_empty():
+		return {}
+	c["day"] = GameState.current_day
+	var before := str(c.get(slot, {}).get("id", ""))
+	var out: Dictionary = AwakeningData.promote_talent(c, slot)
+	var t: Dictionary = out.get(slot, {})
+	if t.is_empty() or str(t.get("id", "")) == before:
+		return {}
+	c[slot] = t
+	c["enlightenment_count"] = int(out.get("enlightenment_count", 0))
+	if slot == "talent":
+		GameState.active_talent = t
+	else:
+		GameState.sub_talent = t
+	SaveSystem.save_character(c)
+	EventBus.talent_changed.emit(GameState.active_talent)
+	return t
 
 # ==========================================
 # DÂN SỐ SERVER GIẢ LẬP (deterministic theo account + ngày)
@@ -201,7 +236,9 @@ func build_board(board: int) -> Array:
 		Board.ALLIANCE:
 			for g in GUILD_NAMES:
 				entries.append({ "name": g + " Liên Minh", "value": maxi(0, int(rng.randfn(5000.0, 3500.0))), "badge": "Mùa này" })
-			# Phase 1 chưa có liên minh → bản thân không xếp hạng
+			var ap := int(acc.get("alliance_points", 0))
+			if ap > 0:
+				self_entry = { "name": my_name, "value": ap, "badge": "Điểm World Boss" }
 		Board.RARE_TALENT:
 			for i in SIM_POPULATION:
 				var r := _bot_rank_str(rng)

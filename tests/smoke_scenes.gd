@@ -52,6 +52,18 @@ func _run() -> void:
 	craft._on_recipe_selected(idx)
 	check(craft.btn_craft.disabled, "cannot craft same tier again")
 
+	# Nhà Gỗ khởi đầu chỉ tặng 1 lần + module của agy đã được nối
+	check(SaveSystem.character_data.get("starter_house_given", false), "starter house given")
+	check(main.talent_panel != null and main.raid_warning_ui != null, "talent panel + raid warning wired")
+	# World Boss: gọi trực tiếp (ngày 3), chém bằng kiếm bậc Sắt
+	var boss = load("res://src/world/boss/WorldBoss.gd").spawn_for_day(3, main.base_pos)
+	main.add_child(boss)
+	var hp0 = boss.current_health
+	main.player.equip_tool(2, 2)
+	boss.take_hit(2, 45)
+	check(boss.current_health < hp0, "boss takes tier damage (int power, no type error)")
+	boss.queue_free()
+
 	# Tua tới hoàng hôn rồi đêm
 	var dn = main.get_node("DayNightCycle")
 	dn.current_time_hours = 17.1

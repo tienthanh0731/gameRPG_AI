@@ -6,6 +6,11 @@ extends Node2D
 const DroppedItemScene = preload("res://src/world/DroppedItem.tscn")
 const DungeonEntranceScene = preload("res://src/dungeon/DungeonEntrance.tscn")
 const OutpostScene = preload("res://src/world/outpost/Outpost.tscn")
+const WorldBossScript = preload("res://src/world/boss/WorldBoss.gd")
+const RaidWarningScene = preload("res://src/ui/raid/RaidWarningUI.tscn")
+const TalentPanelScene = preload("res://src/ui/talent/TalentPanel.tscn")
+## World Boss xuất hiện mỗi N ngày (Spec §8)
+const WORLD_BOSS_EVERY: int = 3
 
 const AUTOSAVE_INTERVAL: float = 30.0
 
@@ -22,6 +27,10 @@ var base_pos: Vector2 = Vector2.ZERO
 var dungeon_nodes: Array[Node2D] = []
 var autosave_timer: float = 0.0
 var outpost_node: Node2D = null
+var world_boss_node: Node2D = null
+var raid_warning_ui: CanvasLayer = null
+var talent_panel: CanvasLayer = null
+var starter_house_node: Node2D = null
 
 var tex_wood_icon: Texture2D
 var tex_stone_icon: Texture2D
@@ -80,6 +89,10 @@ func _ready() -> void:
 	if building_mgr:
 		building_mgr.setup(player, hud)
 		building_mgr.restore_structures(SaveSystem.character_data.get("structures", []))
+		# Nhà Gỗ khởi đầu: tặng 1 lần cho mỗi nhân vật (phá dỡ rồi thì không mọc lại)
+		if not SaveSystem.character_data.get("starter_house_given", false):
+			SaveSystem.character_data["starter_house_given"] = true
+			building_mgr.place_starter_house(base_pos + Vector2(0, -128))
 
 	if raid_mgr:
 		raid_mgr.setup(player, campfire, day_night, hud)
@@ -102,6 +115,14 @@ func _ready() -> void:
 		GameState.granting_rewards = false
 		if hud and hud.has_method("show_toast"):
 			hud.show_toast("Đã nhận rương thưởng cuối ngày còn tồn", Color(1, 0.85, 0.3))
+
+	# Module của agy: cảnh báo thú triều + bảng thiên phú [K]
+	raid_warning_ui = RaidWarningScene.instantiate()
+	add_child(raid_warning_ui)
+	talent_panel = TalentPanelScene.instantiate()
+	add_child(talent_panel)
+	EventBus.day_started.connect(func(_d): _spawn_world_boss_if_due())
+	_spawn_world_boss_if_due()
 
 	EventBus.day_started.connect(func(_d): _spawn_today_dungeons())
 	EventBus.dungeon_entered.connect(func(_n): save_world())
@@ -219,6 +240,36 @@ func _dungeon_markers() -> Array:
 	return out
 
 # ==========================================
+# WORLD BOSS (mỗi 3 ngày, module của agy)
+# ==========================================
+func _spawn_world_boss_if_due() -> void:
+	var day := GameState.current_day
+	var c := SaveSystem.character_data
+	if day % WORLD_BOSS_EVERY != 0 or int(c.get("world_boss_defeated_day", 0)) == day:
+		return
+	if world_boss_node and is_instance_valid(world_boss_node):
+		return
+	world_boss_node = WorldBossScript.spawn_for_day(day, base_pos)
+	if not world_boss_node:
+		return
+	add_child(world_boss_node)
+	world_boss_node.world_boss_defeated.connect(_on_world_boss_defeated)
+	if hud and hud.has_method("show_toast"):
+		hud.show_toast("👑 THÚ VƯƠNG HOANG CỔ đã xuất hiện gần căn cứ!", Color(1, 0.5, 0.3))
+
+func _on_world_boss_defeated(summary: Dictionary) -> void:
+	var c := SaveSystem.character_data
+	c["world_boss_defeated_day"] = GameState.current_day
+	c["world_bosses_defeated"] = int(c.get("world_bosses_defeated", 0)) + 1 # Giác Ngộ bậc S
+	var pts := int(summary.get("contributions", {}).get("local_player", {}).get("alliance_points", 0))
+	SaveSystem.account_data["alliance_points"] = int(SaveSystem.account_data.get("alliance_points", 0)) + pts
+	SaveSystem.save_account()
+	var p := world_boss_node.global_position if is_instance_valid(world_boss_node) else base_pos
+	_on_resource_dropped("Quặng Sắt", 10, p)
+	_on_resource_dropped("Đan Reroll Thiên Phú", 1, p + Vector2(20, 0))
+	save_world()
+
+# ==========================================
 # ĐAN REROLL (1 lần / nhân vật)
 # ==========================================
 func _on_reroll_requested() -> void:
@@ -290,6 +341,8 @@ func _on_time_changed(hour: int, minute: int) -> void:
 
 func _on_phase_changed(phase_name: String) -> void:
 	if hud: hud.update_phase(phase_name)
+	if phase_name == "Dusk" and raid_warning_ui:
+		raid_warning_ui.show_preview(GameState.get_tonight_preview())
 
 func _on_campfire_entered(body: Node2D) -> void:
 	if body == player:

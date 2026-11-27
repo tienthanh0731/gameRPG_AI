@@ -26,6 +26,7 @@ func _ready() -> void:
 	_test_reroll_once()
 	_test_structure_upgrade()
 	_test_equipment_durability()
+	_test_sub_talent_and_enlightenment()
 	_test_daily_quests()
 	_test_outpost_income_and_unclaimed()
 	_test_permadeath_atomic()
@@ -344,3 +345,41 @@ func _test_equipment_durability() -> void:
 	GameState.apply_player(player)
 	check(player.equipment.axe.tier == 1, "equipment restored from save")
 	player.queue_free()
+
+func _test_sub_talent_and_enlightenment() -> void:
+	print("sub-talent (day 15) + enlightenment")
+	var c = SaveSystem.character_data
+	c.erase("sub_talent")
+	GameState.sub_talent = {}
+	var old_day = GameState.current_day
+	GameState.current_day = 14
+	check(ServerSim.awaken_sub_talent().is_empty(), "no sub-talent before day 15")
+	GameState.current_day = 15
+	var sub = ServerSim.awaken_sub_talent()
+	check(not sub.is_empty() and c.sub_talent.id == sub.id, "sub-talent awakened + saved")
+	check(ServerSim.awaken_sub_talent().is_empty(), "only one sub-talent")
+	# 50% hiệu ứng thiên phú phụ
+	GameState.active_talent = { "hp_mult": 1.2, "regen": 1.0 }
+	GameState.sub_talent = { "hp_mult": 1.4, "regen": 2.0 }
+	check(is_equal_approx(GameState.talent_stat("hp_mult", 1.0), 1.2 * 1.2), "mult: main x (1 + 50% sub bonus)")
+	check(is_equal_approx(GameState.talent_stat("regen", 0.0), 2.0), "additive: main + 50% sub")
+	# Giác Ngộ: F → D khi đủ 15 quái
+	var f = TalentData.TALENT_CATALOG[TalentData.Rank.F][0].duplicate(true)
+	f["rank"] = TalentData.Rank.F
+	f["rank_str"] = "F"
+	c["talent"] = f
+	GameState.active_talent = f
+	c["monsters_killed"] = 3
+	check(ServerSim.promote_talent("talent").is_empty(), "not promoted before challenge done")
+	c["monsters_killed"] = 15
+	var nt = ServerSim.promote_talent("talent")
+	check(nt.get("rank_str", "") == "D" and GameState.active_talent.id == nt.id, "promoted F→D in same line")
+	check(SaveSystem._read_json(SaveSystem.CHARACTER_PATH).talent.id == nt.id, "promotion persisted")
+	# Phó bản cộng bộ đếm cho Giác Ngộ
+	var before = int(c.get("dungeons_cleared", 0))
+	c["dungeons"] = { "day": GameState.current_day, "list": [ { "id": "DX", "cleared": false } ] }
+	GameState.mark_dungeon_cleared("DX")
+	check(int(c.dungeons_cleared) == before + 1, "dungeon clear counted for enlightenment")
+	GameState.current_day = old_day
+	GameState.sub_talent = {}
+	c.erase("sub_talent")

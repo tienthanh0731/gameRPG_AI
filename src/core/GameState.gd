@@ -16,6 +16,9 @@ var today_sp: int = 0
 var character_total_sp: int = 0
 var kills_today: int = 0
 var active_talent: Dictionary = {}
+## Thiên Phú Phụ (từ ngày 15) — cộng 50% hiệu ứng của nó
+var sub_talent: Dictionary = {}
+const SUB_TALENT_WEIGHT: float = 0.5
 var is_in_dungeon: bool = false
 var is_dead: bool = false
 
@@ -38,6 +41,7 @@ func _ready() -> void:
 func load_from_character() -> void:
 	var c := SaveSystem.character_data
 	active_talent = c.get("talent", {})
+	sub_talent = c.get("sub_talent", {})
 	current_day = int(c.get("day", 1))
 	time_hours = float(c.get("time_hours", 7.0))
 	today_sp = int(c.get("today_sp", 0))
@@ -67,6 +71,7 @@ func autosave() -> void:
 	c["total_sp"] = character_total_sp
 	c["kills_today"] = kills_today
 	c["talent"] = active_talent
+	c["sub_talent"] = sub_talent
 	SaveSystem.save_character(c)
 
 ## Ghi máu/đói/thể lực/túi đồ của Player vào dữ liệu nhân vật.
@@ -105,31 +110,44 @@ func apply_player(player: Node) -> void:
 	if player.has_method("set_equipment"):
 		player.set_equipment(c.get("equipment", EquipmentData.default_loadout()))
 
+## Chỉ số thiên phú tổng hợp = thiên phú chính + 50% thiên phú phụ.
+## key nhân (…_mult) gộp kiểu nhân; regen / dmg_reduction gộp kiểu cộng.
+func talent_stat(key: String, default_val: float) -> float:
+	var main_v := float(active_talent.get(key, default_val))
+	if sub_talent.is_empty():
+		return main_v
+	var sub_v := float(sub_talent.get(key, default_val))
+	if key.ends_with("_mult"):
+		return main_v * (1.0 + (sub_v - 1.0) * SUB_TALENT_WEIGHT)
+	return main_v + sub_v * SUB_TALENT_WEIGHT
+
+func _talent_ids() -> Array:
+	return [str(active_talent.get("id", "")), str(sub_talent.get("id", ""))]
+
 func apply_talent_stats(player: Node, refill: bool) -> void:
-	var t := active_talent
 	var stats := player.get_node_or_null("SurvivalStats")
 	if stats:
 		var ratio: float = stats.current_health / maxf(1.0, stats.max_health)
-		stats.max_health = BASE_MAX_HEALTH * float(t.get("hp_mult", 1.0))
+		stats.max_health = BASE_MAX_HEALTH * talent_stat("hp_mult", 1.0)
 		stats.current_health = stats.max_health if refill else stats.max_health * ratio
-		stats.regen_per_sec = float(t.get("regen", 0.0))
-		stats.damage_reduction = float(t.get("dmg_reduction", 0.0))
+		stats.regen_per_sec = talent_stat("regen", 0.0)
+		stats.damage_reduction = minf(talent_stat("dmg_reduction", 0.0), 0.6)
 		stats.health_changed.emit(stats.current_health, stats.max_health)
-	var spd := float(t.get("speed_mult", 1.0))
+	var spd := talent_stat("speed_mult", 1.0)
 	player.set("move_speed", BASE_MOVE_SPEED * spd)
 	player.set("sprint_speed", BASE_SPRINT_SPEED * spd)
 
 func get_player_damage_mult() -> float:
-	return float(active_talent.get("dmg_mult", 1.0))
+	return talent_stat("dmg_mult", 1.0)
 
 func get_gather_mult() -> float:
-	return float(active_talent.get("gather_mult", 1.0))
+	return talent_stat("gather_mult", 1.0)
 
 ## Thiên phú tăng máu công trình: Thổ Bá +100%, Hoang Cổ Bá Chủ +200%.
 func get_structure_hp_mult() -> float:
-	match str(active_talent.get("id", "")):
-		"b_earth_lord": return 2.0
-		"sss_primordial_overlord": return 3.0
+	var ids := _talent_ids()
+	if "sss_primordial_overlord" in ids: return 3.0
+	if "b_earth_lord" in ids: return 2.0
 	return 1.0
 
 ## Sản lượng thụ động của các cứ điểm đã chiếm (cộng vào rương cuối ngày).
@@ -269,6 +287,8 @@ func mark_dungeon_cleared(dungeon_id: String) -> bool:
 	for d in data.get("list", []):
 		if d.get("id") == dungeon_id and not d.get("cleared", false):
 			d["cleared"] = true
+			var c := SaveSystem.character_data
+			c["dungeons_cleared"] = int(c.get("dungeons_cleared", 0)) + 1 # cho Giác Ngộ
 			add_sp(30, "Hoàn thành phó bản")
 			return true
 	return false
